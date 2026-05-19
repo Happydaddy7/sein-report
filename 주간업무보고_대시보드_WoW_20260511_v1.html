@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>2주간 업무보고 대시보드 (WoW) | 2026.04.27~05.08</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0F2E4C;
+    --navy-light: #1E4A6E;
+    --navy-soft: #2E5F85;
+    --copper: #B87333;
+    --copper-light: #D89556;
+    --copper-pale: #E8D4B8;
+    --ivory: #F5EFE6;
+    --paper: #FBF8F2;
+    --ink: #1A1A1A;
+    --muted: #6B6B6B;
+    --line: #E5DCC9;
+    --green: #4A7C59;
+    --red: #B85C5C;
+    --amber: #D4A547;
+    --up: #B87333;
+    --down: #8B8275;
+    --flat: #B8B8B8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 32px 24px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+  }
+  .header-left .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .header-left h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 38px;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .header-left .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .header-right {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .header-right .channel {
+    display: inline-block;
+    background: var(--navy);
+    color: var(--ivory);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .header-right .badge {
+    display: inline-block;
+    background: var(--copper);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-left: 4px;
+  }
+
+  /* KPI WOW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 6px;
+    position: relative;
+  }
+  .kpi.accent { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+  .kpi.copper { background: var(--copper); color: white; border-color: var(--copper); }
+  .kpi .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .kpi.accent .label, .kpi.copper .label { color: rgba(255,255,255,0.7); }
+  .kpi .value {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .kpi.accent .value, .kpi.copper .value { color: white; }
+  .kpi .unit {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .kpi.accent .unit, .kpi.copper .unit { color: rgba(255,255,255,0.7); }
+  .kpi .wow {
+    font-size: 11px;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .kpi .wow .arrow { font-size: 13px; font-weight: 700; }
+  .kpi .wow.up { color: var(--copper); }
+  .kpi .wow.down { color: var(--down); }
+  .kpi .wow.flat { color: var(--muted); }
+  .kpi.accent .wow.up { color: var(--copper-light); }
+  .kpi.accent .wow.down { color: #C9C2B5; }
+  .kpi.copper .wow.up, .kpi.copper .wow.down { color: rgba(255,255,255,0.9); }
+  .kpi .prev {
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .kpi.accent .prev, .kpi.copper .prev { color: rgba(255,255,255,0.6); }
+
+  /* SECTION */
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: var(--copper);
+  }
+  .section-title .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .section-title.featured::before {
+    background: var(--copper);
+    width: 6px;
+    height: 22px;
+  }
+  .section-title.featured {
+    font-size: 22px;
+  }
+
+  /* WOW COMPARISON CARD */
+  .wow-wrap {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--ivory);
+    padding: 28px 32px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .wow-wrap .wow-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--copper-light);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .wow-wrap h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    margin-bottom: 18px;
+    color: white;
+  }
+  .wow-bars {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    align-items: end;
+    height: 180px;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+  .wow-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .wow-bar-pair {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    width: 100%;
+    height: 145px;
+    justify-content: center;
+  }
+  .wow-bar {
+    width: 12px;
+    border-radius: 2px 2px 0 0;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .wow-bar.w17 { background: rgba(245, 239, 230, 0.3); }
+  .wow-bar.w18 { background: var(--copper); }
+  .wow-bar .bar-val {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--ivory);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .wow-bar-label {
+    font-size: 10px;
+    color: var(--ivory);
+    text-align: center;
+    line-height: 1.2;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .wow-bar-delta {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .wow-bar-delta.up { color: var(--copper-light); }
+  .wow-bar-delta.down { color: #C9C2B5; }
+  .wow-bar-delta.flat { color: #888073; }
+  .wow-legend {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    padding-top: 16px;
+    border-top: 1px solid rgba(245, 239, 230, 0.2);
+    font-size: 11px;
+    color: rgba(245, 239, 230, 0.85);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .wow-legend .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border-radius: 2px;
+  }
+
+  /* WOW INSIGHT CARDS */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .insight {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 6px;
+    border-left: 4px solid var(--copper);
+  }
+  .insight.up { border-left-color: var(--copper); }
+  .insight.down { border-left-color: var(--down); }
+  .insight .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .insight .person {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .insight .delta-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--copper);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .insight.down .delta-line { color: var(--down); }
+  .insight .note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* MATRIX 2WEEK */
+  .matrix-wrap {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .matrix th, .matrix td {
+    padding: 9px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .matrix th {
+    background: var(--ivory);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .matrix th.week-divider {
+    background: var(--navy);
+    color: var(--ivory);
+    text-align: center;
+    font-size: 10px;
+    border-right: 2px solid var(--copper);
+  }
+  .matrix th.date-col {
+    text-align: center;
+    width: 65px;
+    font-size: 10px;
+  }
+  .matrix th.date-col .day {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .matrix th.date-col .weekday {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 1px;
+    font-weight: 500;
+  }
+  .matrix th.date-col.holiday .weekday { color: var(--red); }
+  .matrix th.date-col.divider { border-right: 2px solid var(--copper); }
+  .matrix tr:hover td { background: var(--paper); }
+  .matrix td.author {
+    font-weight: 600;
+    color: var(--navy);
+    width: 130px;
+  }
+  .matrix td.author .role {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .matrix td.cell {
+    text-align: center;
+    width: 65px;
+    background: var(--paper);
+    font-size: 12px;
+  }
+  .matrix td.cell.has {
+    background: var(--ivory);
+    color: var(--navy);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .matrix td.cell.has .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--copper);
+    margin-right: 3px;
+    vertical-align: middle;
+  }
+  .matrix td.cell.empty { color: var(--line); font-size: 12px; }
+  .matrix td.cell.divider { border-right: 2px solid var(--copper); }
+  .matrix td.subtotal {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--navy);
+    background: var(--ivory);
+    font-size: 13px;
+    width: 50px;
+  }
+  .matrix td.subtotal.divider { border-right: 2px solid var(--copper); }
+  .matrix td.delta {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 12px;
+    width: 70px;
+  }
+  .matrix td.delta.up { color: var(--copper); background: rgba(184, 115, 51, 0.06); }
+  .matrix td.delta.down { color: var(--down); background: rgba(139, 130, 117, 0.06); }
+  .matrix td.delta.flat { color: var(--flat); background: var(--paper); }
+
+  /* TWO-COL */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+  }
+
+  /* DEPT CARDS */
+  .dept-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .dept-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--copper);
+    padding: 18px 20px;
+    border-radius: 4px;
+  }
+  .dept-card.sales { border-left-color: var(--navy); }
+  .dept-card.trade { border-left-color: var(--copper); }
+  .dept-card.finance { border-left-color: var(--green); }
+  .dept-card.production { border-left-color: var(--amber); }
+  .dept-card h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dept-card h3 .activity {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--copper);
+    font-weight: 600;
+  }
+  .dept-card .members {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 12px;
+  }
+  .dept-card ul {
+    list-style: none;
+    font-size: 12px;
+  }
+  .dept-card li {
+    padding: 6px 0;
+    border-top: 1px dashed var(--line);
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .dept-card li:first-child { border-top: none; }
+  .dept-card li strong {
+    color: var(--copper);
+    font-weight: 600;
+  }
+  .dept-card li .week-tag {
+    display: inline-block;
+    font-size: 9px;
+    background: var(--ivory);
+    color: var(--navy);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
+  /* PRICE TABLE */
+  .price-table {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .price-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .price-table th {
+    background: var(--navy);
+    color: var(--ivory);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .price-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .price-table .item { font-weight: 600; color: var(--navy); }
+  .price-table .price {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .trend-up { color: var(--red); }
+  .trend-down { color: var(--green); }
+  .trend-flat { color: var(--muted); }
+  .price-table tr:hover td { background: var(--paper); }
+
+  /* ISSUES */
+  .issue-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .issue-card {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--ivory);
+    padding: 22px 24px;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .issue-card::before {
+    content: attr(data-num);
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 60px;
+    font-weight: 700;
+    color: var(--copper);
+    opacity: 0.4;
+    line-height: 1;
+  }
+  .issue-card .tag {
+    display: inline-block;
+    background: var(--copper);
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .issue-card h4 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+  }
+  .issue-card p {
+    font-size: 12px;
+    color: rgba(245, 239, 230, 0.85);
+    line-height: 1.55;
+    position: relative;
+    z-index: 1;
+  }
+  .issue-card .meta {
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--copper-light);
+    border-top: 1px solid rgba(245, 239, 230, 0.2);
+    padding-top: 10px;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  @media (max-width: 1100px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .dept-grid { grid-template-columns: 1fr; }
+    .issue-grid { grid-template-columns: 1fr; }
+    .insight-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="eyebrow">BI-WEEKLY OPERATIONS BRIEF · WOW COMPARISON</div>
+      <h1>주간 업무보고 대시보드</h1>
+      <div class="subtitle">2026년 4월 27일(월) ~ 5월 8일(금) · 2개 주차 비교 (W17 vs W18)</div>
+    </div>
+    <div class="header-right">
+      <div class="channel">#0-02업무보고</div>
+      <div class="badge">WoW 비교</div>
+      <div>SOURCE · SLACK PRIVATE CHANNEL</div>
+      <div>GENERATED · 2026.05.11</div>
+    </div>
+  </header>
+
+  <!-- KPI ROW WITH WOW -->
+  <section class="kpi-row">
+    <div class="kpi accent">
+      <div class="label">W18 총 보고 건수</div>
+      <div class="value">42<span class="unit">건</span></div>
+      <div class="wow up"><span class="arrow">▲</span> +12건 (+40%) <span class="prev">vs W17 30건</span></div>
+    </div>
+    <div class="kpi">
+      <div class="label">활성 작성자</div>
+      <div class="value">13<span class="unit">명</span></div>
+      <div class="wow up"><span class="arrow">▲</span> +1명 <span class="prev">vs W17 12명</span></div>
+    </div>
+    <div class="kpi">
+      <div class="label">1인당 평균 보고</div>
+      <div class="value">3.2<span class="unit">건</span></div>
+      <div class="wow up"><span class="arrow">▲</span> +0.7건 (+28%) <span class="prev">vs W17 2.5건</span></div>
+    </div>
+    <div class="kpi copper">
+      <div class="label">단가 변동 품목</div>
+      <div class="value">10<span class="unit">품목</span></div>
+      <div class="wow up"><span class="arrow">▲</span> +4품목 <span class="prev">vs W17 6품목</span></div>
+    </div>
+    <div class="kpi">
+      <div class="label">긴급 이슈</div>
+      <div class="value">3<span class="unit">건</span></div>
+      <div class="wow flat"><span class="arrow">━</span> 동일 <span class="prev">대두박 지속 이슈</span></div>
+    </div>
+  </section>
+
+  <!-- WOW COMPARISON BAR CHART -->
+  <section class="section">
+    <h2 class="section-title featured">📊 인원별 보고 활동량 WoW 비교 <span class="count">// W17(4/27~5/1) vs W18(5/4~5/8)</span></h2>
+    <div class="wow-wrap">
+      <div class="wow-eyebrow">REPORTING ACTIVITY · WEEK-OVER-WEEK</div>
+      <h3>작성자별 주간 보고 건수 변화</h3>
+      <div class="wow-bars">
+        <!-- 이재석 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 60%"><span class="bar-val">3</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">이재석<br>부사장</div>
+          <div class="wow-bar-delta up">▲ +1</div>
+        </div>
+        <!-- 박제영 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 60%"><span class="bar-val">3</span></div>
+            <div class="wow-bar w18" style="height: 60%"><span class="bar-val">3</span></div>
+          </div>
+          <div class="wow-bar-label">박제영</div>
+          <div class="wow-bar-delta flat">━ 0</div>
+        </div>
+        <!-- 김휘동 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 40%"><span class="bar-val">2</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">김휘동</div>
+          <div class="wow-bar-delta up">▲ +2</div>
+        </div>
+        <!-- 왕려원 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 20%"><span class="bar-val">1</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">왕려원</div>
+          <div class="wow-bar-delta up">▲ +3</div>
+        </div>
+        <!-- 이복진 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 2%"><span class="bar-val">0</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">이복진<br>차장</div>
+          <div class="wow-bar-delta up">▲ +4</div>
+        </div>
+        <!-- 정인상 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 60%"><span class="bar-val">3</span></div>
+            <div class="wow-bar w18" style="height: 60%"><span class="bar-val">3</span></div>
+          </div>
+          <div class="wow-bar-label">정인상</div>
+          <div class="wow-bar-delta flat">━ 0</div>
+        </div>
+        <!-- 이충선 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 40%"><span class="bar-val">2</span></div>
+            <div class="wow-bar w18" style="height: 40%"><span class="bar-val">2</span></div>
+          </div>
+          <div class="wow-bar-label">이충선</div>
+          <div class="wow-bar-delta flat">━ 0</div>
+        </div>
+        <!-- 성유진 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 100%"><span class="bar-val">5</span></div>
+            <div class="wow-bar w18" style="height: 40%"><span class="bar-val">2</span></div>
+          </div>
+          <div class="wow-bar-label">성유진</div>
+          <div class="wow-bar-delta down">▼ -3</div>
+        </div>
+        <!-- 김선이 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 60%"><span class="bar-val">3</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">김선이</div>
+          <div class="wow-bar-delta up">▲ +1</div>
+        </div>
+        <!-- 류미화 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 40%"><span class="bar-val">2</span></div>
+            <div class="wow-bar w18" style="height: 60%"><span class="bar-val">3</span></div>
+          </div>
+          <div class="wow-bar-label">류미화<br>상무</div>
+          <div class="wow-bar-delta up">▲ +1</div>
+        </div>
+        <!-- 황유나 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 40%"><span class="bar-val">2</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">황유나</div>
+          <div class="wow-bar-delta up">▲ +2</div>
+        </div>
+        <!-- 박혜련 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 60%"><span class="bar-val">3</span></div>
+            <div class="wow-bar w18" style="height: 80%"><span class="bar-val">4</span></div>
+          </div>
+          <div class="wow-bar-label">박혜련</div>
+          <div class="wow-bar-delta up">▲ +1</div>
+        </div>
+        <!-- 이병준 -->
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar w17" style="height: 20%"><span class="bar-val">1</span></div>
+            <div class="wow-bar w18" style="height: 20%"><span class="bar-val">1</span></div>
+          </div>
+          <div class="wow-bar-label">이병준<br>팀장</div>
+          <div class="wow-bar-delta flat">━ 0</div>
+        </div>
+      </div>
+      <div class="wow-legend">
+        <div><span class="swatch" style="background: rgba(245, 239, 230, 0.3);"></span>W17 (4/27~5/1)</div>
+        <div><span class="swatch" style="background: var(--copper);"></span>W18 (5/4~5/8)</div>
+        <div style="color: var(--copper-light)">▲ 활동 증가 8명</div>
+        <div style="color: #C9C2B5">▼ 활동 감소 1명</div>
+        <div style="color: #888073">━ 동일 4명</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEY INSIGHTS -->
+  <section class="section">
+    <h2 class="section-title">WoW 핵심 변화 인사이트 <span class="count">// Top 4 movers</span></h2>
+    <div class="insight-grid">
+      <div class="insight up">
+        <div class="label">신규 활성화</div>
+        <div class="person">이복진 차장</div>
+        <div class="delta-line">0 → 4건 (▲ +4)</div>
+        <div class="note">W17에 무보고였으나 W18 매일 보고. 발린·하이팻·리버콜골드 영업 활동 본격화.</div>
+      </div>
+      <div class="insight up">
+        <div class="label">활동량 급증</div>
+        <div class="person">왕려원</div>
+        <div class="delta-line">1 → 4건 (▲ +3)</div>
+        <div class="note">통관·국제시세 보고 빈도 4배. 트레오닌·라이신 하락세, 메가팻·파인플·하이팻 통관 집중.</div>
+      </div>
+      <div class="insight up">
+        <div class="label">활동량 2배</div>
+        <div class="person">김휘동 / 황유나</div>
+        <div class="delta-line">2 → 4건 (▲ +2)</div>
+        <div class="note">김휘동: 서울우유·드허스 영업 집중. 황유나: 4월 마감 + 선물환 USD 90K 구매 집중.</div>
+      </div>
+      <div class="insight down">
+        <div class="label">활동량 감소</div>
+        <div class="person">성유진</div>
+        <div class="delta-line">5 → 2건 (▼ -3)</div>
+        <div class="note">W17 무역 단미신청 다수 처리 후 W18은 시황 보고만. 정상적 사이클로 추정.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MATRIX 2WEEK -->
+  <section class="section">
+    <h2 class="section-title">2주간 작성자 × 일자 매트릭스 <span class="count">// 13인 × 10영업일</span></h2>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align: bottom;">작성자</th>
+            <th colspan="5" class="week-divider">W17 · 2026.04.27 ~ 05.01</th>
+            <th colspan="5" class="week-divider" style="border-right: 1px solid var(--line);">W18 · 2026.05.04 ~ 05.08</th>
+            <th rowspan="2" style="vertical-align: bottom;">W17</th>
+            <th rowspan="2" style="vertical-align: bottom; border-right: 2px solid var(--copper);">W18</th>
+            <th rowspan="2" style="vertical-align: bottom;">증감</th>
+          </tr>
+          <tr>
+            <th class="date-col"><span class="day">04.27</span><span class="weekday">월</span></th>
+            <th class="date-col"><span class="day">04.28</span><span class="weekday">화</span></th>
+            <th class="date-col"><span class="day">04.29</span><span class="weekday">수</span></th>
+            <th class="date-col"><span class="day">04.30</span><span class="weekday">목</span></th>
+            <th class="date-col divider holiday"><span class="day">05.01</span><span class="weekday">노동절</span></th>
+            <th class="date-col"><span class="day">05.04</span><span class="weekday">월</span></th>
+            <th class="date-col holiday"><span class="day">05.05</span><span class="weekday">어린이날</span></th>
+            <th class="date-col"><span class="day">05.06</span><span class="weekday">수</span></th>
+            <th class="date-col"><span class="day">05.07</span><span class="weekday">목</span></th>
+            <th class="date-col" style="border-right: 1px solid var(--line);"><span class="day">05.08</span><span class="weekday">금</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="author">이재석 부사장<span class="role">영업</span></td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">3</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +1</td>
+          </tr>
+          <tr>
+            <td class="author">박제영<span class="role">영업</span></td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">3</td>
+            <td class="subtotal divider">3</td>
+            <td class="delta flat">━ 0</td>
+          </tr>
+          <tr>
+            <td class="author">김휘동<span class="role">영업</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">2</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +2</td>
+          </tr>
+          <tr>
+            <td class="author">왕려원<span class="role">수출입</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">1</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +3</td>
+          </tr>
+          <tr>
+            <td class="author">이복진 차장<span class="role">미래축산</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">0</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +4</td>
+          </tr>
+          <tr>
+            <td class="author">정인상<span class="role">뉴트리신</span></td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">3</td>
+            <td class="subtotal divider">3</td>
+            <td class="delta flat">━ 0</td>
+          </tr>
+          <tr>
+            <td class="author">이충선<span class="role">영업기획</span></td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="subtotal">2</td>
+            <td class="subtotal divider">2</td>
+            <td class="delta flat">━ 0</td>
+          </tr>
+          <tr>
+            <td class="author">성유진<span class="role">무역/원료</span></td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>2</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="subtotal">5</td>
+            <td class="subtotal divider">2</td>
+            <td class="delta down">▼ -3</td>
+          </tr>
+          <tr>
+            <td class="author">김선이<span class="role">무역(인산)</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">3</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +1</td>
+          </tr>
+          <tr>
+            <td class="author">류미화 상무<span class="role">외환/자금</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="subtotal">2</td>
+            <td class="subtotal divider">3</td>
+            <td class="delta up">▲ +1</td>
+          </tr>
+          <tr>
+            <td class="author">황유나<span class="role">자금</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">2</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +2</td>
+          </tr>
+          <tr>
+            <td class="author">박혜련<span class="role">비에스 자금</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="subtotal">3</td>
+            <td class="subtotal divider">4</td>
+            <td class="delta up">▲ +1</td>
+          </tr>
+          <tr>
+            <td class="author">이병준 팀장<span class="role">전략(본인)</span></td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has"><span class="dot"></span>1</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="cell empty">—</td>
+            <td class="subtotal">1</td>
+            <td class="subtotal divider">1</td>
+            <td class="delta flat">━ 0</td>
+          </tr>
+          <tr style="background: var(--ivory); font-weight: 700;">
+            <td class="author" style="color: var(--copper);">일별 합계</td>
+            <td class="cell has">4</td>
+            <td class="cell has">8</td>
+            <td class="cell has">11</td>
+            <td class="cell has">7</td>
+            <td class="cell empty divider">—</td>
+            <td class="cell has">10</td>
+            <td class="cell empty">—</td>
+            <td class="cell has">10</td>
+            <td class="cell has">11</td>
+            <td class="cell has">11</td>
+            <td class="subtotal" style="color: var(--copper)">30</td>
+            <td class="subtotal divider" style="color: var(--copper); font-size: 14px;">42</td>
+            <td class="delta up" style="font-size: 13px;">▲ +40%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TWO COL: PRICE + DEPT -->
+  <section class="section">
+    <div class="two-col">
+      <div>
+        <h2 class="section-title">2주간 단가 변동 누적 트렌드 <span class="count">// 4월말 ~ 5월초</span></h2>
+        <div class="price-table">
+          <table>
+            <thead>
+              <tr>
+                <th>품목</th>
+                <th>W17 (4월말)</th>
+                <th>W18 (5월초)</th>
+                <th>변동</th>
+                <th>출처</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="item">메치오닌 (DL)</td>
+                <td class="price">6,500원</td>
+                <td class="price trend-up">7,000원</td>
+                <td class="trend-up">▲ +7.7%</td>
+                <td>부경양돈</td>
+              </tr>
+              <tr>
+                <td class="item">메치오닌 국제</td>
+                <td class="price">$6.0/kg</td>
+                <td class="price">$6.0/kg</td>
+                <td class="trend-flat">━ 안정</td>
+                <td>CJ 오더중단</td>
+              </tr>
+              <tr>
+                <td class="item">TCP (TS사료)</td>
+                <td class="price">968원</td>
+                <td class="price trend-up">1,050원</td>
+                <td class="trend-up">▲ +8.5%</td>
+                <td>중앙석고</td>
+              </tr>
+              <tr>
+                <td class="item">DS피드</td>
+                <td class="price">1,390원</td>
+                <td class="price trend-up">1,830원</td>
+                <td class="trend-up">▲ +31.7%</td>
+                <td>중앙석고 6월</td>
+              </tr>
+              <tr>
+                <td class="item">메가팻</td>
+                <td class="price">2,050원</td>
+                <td class="price trend-up">2,300원</td>
+                <td class="trend-up">▲ +12.2%</td>
+                <td>농협사료</td>
+              </tr>
+              <tr>
+                <td class="item">파인플 (남선)</td>
+                <td class="price">197원</td>
+                <td class="price trend-up">212원</td>
+                <td class="trend-up">▲ +7.6%</td>
+                <td>남선사업</td>
+              </tr>
+              <tr>
+                <td class="item">발린</td>
+                <td class="price">기존가</td>
+                <td class="price trend-up">+인상가 10T</td>
+                <td class="trend-up">▲ 부분</td>
+                <td>서부사료</td>
+              </tr>
+              <tr>
+                <td class="item">대두박 (상차도)</td>
+                <td class="price">645원</td>
+                <td class="price trend-down">620원</td>
+                <td class="trend-down">▼ -3.9%</td>
+                <td>BK&CO 군산항</td>
+              </tr>
+              <tr>
+                <td class="item">트레오닌 (국제)</td>
+                <td class="price">$1,980/T</td>
+                <td class="price trend-down">$1,350/T</td>
+                <td class="trend-down">▼ -31.8%</td>
+                <td>왕려원 시황</td>
+              </tr>
+              <tr>
+                <td class="item">라이신 (국제)</td>
+                <td class="price">$800/T~</td>
+                <td class="price trend-down">$670/T</td>
+                <td class="trend-down">▼ 하락</td>
+                <td>왕려원 시황</td>
+              </tr>
+              <tr>
+                <td class="item">VE</td>
+                <td class="price">$12.5/kg</td>
+                <td class="price trend-up">$13/kg</td>
+                <td class="trend-up">▲ 응찰가</td>
+                <td>한국씨벤</td>
+              </tr>
+              <tr>
+                <td class="item">VC 97%</td>
+                <td class="price">$3.2/kg</td>
+                <td class="price trend-up">4,700원</td>
+                <td class="trend-up">▲ 5월 확정</td>
+                <td>다원케미칼</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title">부서별 활동 (W18 기준) <span class="count">// 4파트</span></h2>
+        <div class="dept-grid">
+          <div class="dept-card sales">
+            <h3>영업 (사료원료) <span class="activity">19건 ▲+5</span></h3>
+            <div class="members">이재석·박제영·김휘동·이복진</div>
+            <ul>
+              <li><span class="week-tag">W18</span><strong>대두박</strong> 우진/해드림 5~6월 수급 협의</li>
+              <li><span class="week-tag">W18</span><strong>메치오닌</strong> 5월 7,000원 인상 부경양돈</li>
+              <li><span class="week-tag">W17</span><strong>VE/VAD3</strong> 부산바이오 입찰 전품목 낙찰 실패</li>
+              <li><span class="week-tag">W17→W18</span><strong>서울우유</strong> 하이팻 5천만원 조건 협의 지속</li>
+            </ul>
+          </div>
+          <div class="dept-card trade">
+            <h3>무역 (원료/통관) <span class="activity">10건 ▲+1</span></h3>
+            <div class="members">왕려원·성유진·김선이</div>
+            <ul>
+              <li><span class="week-tag">W18</span><strong>SINOCHEM MDCP</strong> 200톤 $1,030 신용장</li>
+              <li><span class="week-tag">W18</span><strong>황산 수출금지</strong> 중국 5/1 발효</li>
+              <li><span class="week-tag">W17</span><strong>CHANHEN MCP</strong> 200톤 $960 통관완료</li>
+              <li><span class="week-tag">W17→W18</span><strong>EX-RICE</strong> 신용장 개설 진행 중</li>
+            </ul>
+          </div>
+          <div class="dept-card finance">
+            <h3>자금/외환 <span class="activity">11건 ▲+4</span></h3>
+            <div class="members">류미화·황유나·박혜련</div>
+            <ul>
+              <li><span class="week-tag">W18</span><strong>선물환</strong> USD 90K×3 + 30K 구매</li>
+              <li><span class="week-tag">W17→W18</span><strong>GNCC 한페</strong> 5/1 선적분 송금 완료</li>
+              <li><span class="week-tag">W17→W18</span><strong>4월 마감</strong> 매출 세금계산서 발행</li>
+              <li><span class="week-tag">W18</span><strong>비에스</strong> 농협통장 개설, 결산회의 준비</li>
+            </ul>
+          </div>
+          <div class="dept-card production">
+            <h3>뉴트리신/기획 <span class="activity">6건 ▲+1</span></h3>
+            <div class="members">정인상·이충선·이병준</div>
+            <ul>
+              <li><span class="week-tag">W18</span><strong>이티바이오텍</strong> 수정란이식 40마리 적용</li>
+              <li><span class="week-tag">W18</span><strong>나노비타블록</strong> 종모우 비즈니스 진행</li>
+              <li><span class="week-tag">W17→W18</span><strong>사카로마이세스</strong> 사업성 검토 착수</li>
+              <li><span class="week-tag">W17</span><strong>회의 혁신 품의서</strong>, 재고 대시보드</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ISSUES -->
+  <section class="section">
+    <h2 class="section-title">2주 누적 핵심 이슈 <span class="count">// 추적 필요</span></h2>
+    <div class="issue-grid">
+      <div class="issue-card" data-num="01">
+        <span class="tag">SUPPLY · 2주 누적</span>
+        <h4>대두박 수급 비상</h4>
+        <p>W17부터 우진에스에프 5월(300T)·6월(600T) 협의 시작 → W18 울산항 입항 15일 지연 확인. 해드림 추가 500~600T·HS아쿠아피드 6월중 공급 협의. 중국산($425) 검토. 7월 이후 국산 100T 사용 제안.</p>
+        <div class="meta">이재석 부사장 · 4.29 ~ 5.8 누적</div>
+      </div>
+      <div class="issue-card" data-num="02">
+        <span class="tag">PRICE · 신규 발생</span>
+        <h4>인산칼슘 시황 격변</h4>
+        <p>W18 신규: 중국 5/1부터 황산 수출 금지로 톤당 120위안 하락. 황산 가격 1년 전 대비 +186%. SINOCHEM MDCP 200T $1,030 신용장 개설, 5월말~6월초 선적. 6~8월 예상판매가 체크 필요.</p>
+        <div class="meta">김선이 · 5.07~5.08 신규</div>
+      </div>
+      <div class="issue-card" data-num="03">
+        <span class="tag">PRICE · 일제 인상</span>
+        <h4>5월 단가 일제 인상 단행</h4>
+        <p>W17에 협의 진행 → W18에 확정 다수. 메치오닌 7,000원(+7.7%)·TCP 1,050원(+8.5%)·DS피드 1,830원(+31.7%)·메가팻 2,300원(+12.2%) 등 6품목 인상. 반면 트레오닌·라이신·대두박은 하락세.</p>
+        <div class="meta">전체 영업 · 2주 누계</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>SOURCE · Slack #0-02업무보고 · 72건 분석 (W17:30, W18:42)</div>
+    <div>SAEIN BIO · STRATEGY TEAM · WoW v1</div>
+  </footer>
+
+</div>
+</body>
+</html>

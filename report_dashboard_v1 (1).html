@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세인바이오 업무보고 대시보드 · 실시간 연동</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --navy: #0F2E4C;
+    --navy-light: #1E4A6E;
+    --copper: #B87333;
+    --copper-light: #D89556;
+    --ivory: #F5EFE6;
+    --paper: #FBF8F2;
+    --ink: #1A1A1A;
+    --muted: #6B6B6B;
+    --line: #E5DCC9;
+    --up: #B87333;
+    --down: #8B8275;
+    --flat: #B8B8B8;
+    --green: #4A7C59;
+    --amber: #D4A547;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 24px 16px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  .header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+  }
+  .header .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .header .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .header .badge-live {
+    display: inline-block;
+    background: var(--copper);
+    color: white;
+    padding: 4px 10px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border-radius: 3px;
+    margin-bottom: 6px;
+    margin-right: 4px;
+  }
+  .header .badge-live::before {
+    content: '●';
+    color: #6EE07E;
+    margin-right: 4px;
+    animation: pulse 2s infinite;
+  }
+  .header .badge-wow {
+    display: inline-block;
+    background: var(--navy);
+    color: var(--ivory);
+    padding: 4px 10px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  #loader {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  #loader .spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--ivory);
+    border-top-color: var(--copper);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error {
+    background: #FFF3F3;
+    border: 1px solid #E8B4B4;
+    color: #8B3A3A;
+    padding: 16px;
+    border-radius: 6px;
+    margin: 20px 0;
+    display: none;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .controls .label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .controls button {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .controls button.active {
+    background: var(--navy);
+    color: var(--ivory);
+    border-color: var(--navy);
+  }
+  .controls button:hover { border-color: var(--copper); }
+  .refresh-btn {
+    margin-left: auto;
+    background: var(--copper) !important;
+    color: white !important;
+    border-color: var(--copper) !important;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 6px;
+  }
+  .kpi.accent { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+  .kpi.copper { background: var(--copper); color: white; border-color: var(--copper); }
+  .kpi .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .kpi.accent .label, .kpi.copper .label { color: rgba(255,255,255,0.7); }
+  .kpi .value {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .kpi.accent .value, .kpi.copper .value { color: white; }
+  .kpi .unit { font-size: 13px; color: var(--muted); margin-left: 4px; }
+  .kpi.accent .unit, .kpi.copper .unit { color: rgba(255,255,255,0.7); }
+  .kpi .wow {
+    font-size: 11px;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .kpi .wow.up { color: var(--copper); }
+  .kpi.accent .wow.up { color: var(--copper-light); }
+  .kpi .wow.down { color: var(--down); }
+  .kpi .wow.flat { color: var(--muted); }
+  .kpi.accent .wow.down, .kpi.accent .wow.flat { color: rgba(255,255,255,0.6); }
+  .kpi.copper .wow { color: rgba(255,255,255,0.9); }
+
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: var(--copper);
+  }
+  .section-title .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .wow-wrap {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--ivory);
+    padding: 24px 28px;
+    border-radius: 8px;
+  }
+  .wow-bars {
+    display: grid;
+    gap: 4px;
+    align-items: end;
+    height: 200px;
+    padding: 0 4px;
+  }
+  .wow-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .wow-bar-pair {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    width: 100%;
+    height: 145px;
+    justify-content: center;
+  }
+  .wow-bar {
+    width: 14px;
+    border-radius: 2px 2px 0 0;
+    position: relative;
+    transition: all 0.4s;
+  }
+  .wow-bar.prev { background: rgba(245, 239, 230, 0.3); }
+  .wow-bar.cur { background: var(--copper); }
+  .wow-bar .bar-val {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--ivory);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .wow-bar-label {
+    font-size: 10px;
+    color: var(--ivory);
+    text-align: center;
+    line-height: 1.2;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .wow-bar-delta {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .wow-bar-delta.up { color: var(--copper-light); }
+  .wow-bar-delta.down { color: #C9C2B5; }
+  .wow-bar-delta.flat { color: #888073; }
+  .wow-legend {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    padding-top: 16px;
+    margin-top: 12px;
+    border-top: 1px solid rgba(245, 239, 230, 0.2);
+    font-size: 11px;
+    color: rgba(245, 239, 230, 0.85);
+    font-family: 'JetBrains Mono', monospace;
+    flex-wrap: wrap;
+  }
+  .wow-legend .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border-radius: 2px;
+  }
+
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .insight {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 6px;
+    border-left: 4px solid var(--copper);
+  }
+  .insight.up { border-left-color: var(--copper); }
+  .insight.down { border-left-color: var(--down); }
+  .insight .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .insight .person {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .insight .delta-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--copper);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .insight.down .delta-line { color: var(--down); }
+  .insight .note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .matrix-wrap {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 700px;
+  }
+  .matrix th, .matrix td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .matrix th {
+    background: var(--ivory);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  .matrix th.author-col { text-align: left; min-width: 100px; }
+  .matrix th .day {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .matrix th .weekday {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .matrix th.week-header {
+    background: var(--navy);
+    color: var(--ivory);
+    text-align: center;
+    font-size: 10px;
+    padding: 6px;
+  }
+  .matrix th.week-header.cur { background: var(--copper); }
+  .matrix td.author {
+    font-weight: 600;
+    color: var(--navy);
+    text-align: left;
+  }
+  .matrix td.author .dept {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .matrix td.cell {
+    text-align: center;
+    background: var(--paper);
+  }
+  .matrix td.cell.has {
+    background: var(--ivory);
+    color: var(--navy);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .matrix td.cell.empty { color: var(--line); }
+  .matrix td.subtotal {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--navy);
+    background: var(--ivory);
+  }
+  .matrix td.subtotal.cur {
+    color: var(--copper);
+    border-right: 2px solid var(--copper);
+  }
+  .matrix td.delta-cell {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .matrix td.delta-cell.up { color: var(--copper); background: rgba(184, 115, 51, 0.06); }
+  .matrix td.delta-cell.down { color: var(--down); background: rgba(139, 130, 117, 0.06); }
+  .matrix td.delta-cell.flat { color: var(--flat); background: var(--paper); }
+  .matrix .week-divider { border-right: 2px solid var(--copper); }
+
+  .dept-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .dept-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--navy);
+    padding: 16px 18px;
+    border-radius: 4px;
+  }
+  .dept-card.trade { border-left-color: var(--copper); }
+  .dept-card.finance { border-left-color: var(--green); }
+  .dept-card.strategy { border-left-color: var(--amber); }
+  .dept-card h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .dept-card .members {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 10px;
+  }
+  .dept-card .value {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .dept-card .unit {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .dept-card .wow {
+    font-size: 11px;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .dept-card .wow.up { color: var(--copper); }
+  .dept-card .wow.down { color: var(--down); }
+  .dept-card .wow.flat { color: var(--flat); }
+
+  .report-list { display: flex; flex-direction: column; gap: 8px; }
+  .report-item {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .report-header {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+  }
+  .report-header:hover { background: var(--paper); }
+  .report-header .meta { display: flex; gap: 12px; align-items: center; }
+  .report-header .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    min-width: 75px;
+  }
+  .report-header .author {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    min-width: 80px;
+  }
+  .report-header .preview {
+    font-size: 12px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 500px;
+  }
+  .report-header .toggle {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--copper);
+    font-size: 14px;
+    font-weight: 700;
+    width: 16px;
+    text-align: center;
+  }
+  .report-body {
+    display: none;
+    padding: 16px 20px;
+    border-top: 1px solid var(--line);
+    background: var(--paper);
+    white-space: pre-wrap;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .report-item.open .report-body { display: block; }
+  .report-item.open .toggle::before { content: '−'; }
+  .report-item:not(.open) .toggle::before { content: '+'; }
+  .report-body .share {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .report-body .share-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--copper);
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    body { padding: 16px 10px; font-size: 13px; }
+    .header h1 { font-size: 24px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .kpi .value { font-size: 24px; }
+    .insight-grid { grid-template-columns: repeat(2, 1fr); }
+    .dept-grid { grid-template-columns: repeat(2, 1fr); }
+    .wow-bar { width: 9px; }
+    .wow-bar-label { font-size: 9px; }
+    .report-header .preview { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div>
+      <div class="eyebrow">WEEKLY OPERATIONS BRIEF · LIVE</div>
+      <h1>업무보고 대시보드</h1>
+      <div class="subtitle">세인바이오 · Slack #업무보고 실시간 연동</div>
+    </div>
+    <div class="meta">
+      <div>
+        <span class="badge-live">LIVE</span>
+        <span class="badge-wow">WoW 비교</span>
+      </div>
+      <div id="last-updated">마지막 갱신 · 로딩중...</div>
+      <div id="data-range" style="margin-top: 4px;"></div>
+    </div>
+  </header>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div>시트에서 데이터를 불러오는 중...</div>
+  </div>
+
+  <div id="error"></div>
+
+  <div id="content" style="display: none;">
+    <div class="controls">
+      <span class="label">기간:</span>
+      <button class="period-btn active" data-days="7">최근 7일</button>
+      <button class="period-btn" data-days="14">최근 14일</button>
+      <button class="period-btn" data-days="30">최근 30일</button>
+      <button class="refresh-btn" onclick="loadData()">🔄 새로고침</button>
+    </div>
+
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <section class="section">
+      <h2 class="section-title">📊 인원별 보고 활동량 WoW 비교 <span class="count" id="bar-period"></span></h2>
+      <div class="wow-wrap">
+        <div class="wow-bars" id="wow-bars"></div>
+        <div class="wow-legend" id="wow-legend"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">WoW 핵심 변화 인사이트 <span class="count">// Top 4 Movers</span></h2>
+      <div class="insight-grid" id="insight-grid"></div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">2주간 작성자 × 일자 매트릭스</h2>
+      <div class="matrix-wrap">
+        <table class="matrix" id="matrix"></table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">부서별 보고 활동</h2>
+      <div class="dept-grid" id="dept-grid"></div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">보고 원문 <span class="count" id="list-count"></span></h2>
+      <div class="report-list" id="report-list"></div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    SAEIN BIO · 시트 자동 연동 · 작성 이병준 팀장 · v1
+  </footer>
+</div>
+
+<script>
+  // ⭐ 시트 CSV URL (시트 웹에 게시 URL)
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTASu9EZlZlaMX3y1dvql6pbVJgOvdTF7mhjdEIUSBA-OmFJXLPx3tX7wW-Ovv9NWdbhbPSkLS0OVMS/pub?output=csv';
+
+  // 작성자 → 부서 매핑 (수정 가능)
+  const DEPT_MAP = {
+    '이재석': '영업', '박제영': '영업', '김휘동': '영업', '이복진': '영업',
+    '정인상': '영업', '이충선': '영업',
+    '왕려원': '무역', '성유진': '무역', '김선이': '무역',
+    '류미화': '자금', '황유나': '자금', '박혜련': '자금',
+    '이병준': '전략'
+  };
+  const DEPT_ORDER = ['영업', '무역', '자금', '전략'];
+  const DEPT_CLASS = { '영업': '', '무역': 'trade', '자금': 'finance', '전략': 'strategy' };
+
+  let allReports = [];
+  let currentPeriod = 7;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPeriod = parseInt(btn.dataset.days);
+        render();
+      });
+    });
+  });
+
+  async function loadData() {
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+
+    try {
+      // 캐시 우회를 위해 timestamp 추가
+      const url = CSV_URL + '&_=' + Date.now();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('네트워크 응답 오류: ' + response.status);
+      const csvText = await response.text();
+
+      const parsed = Papa.parse(csvText, {
+        header: false,
+        skipEmptyLines: true
+      });
+
+      // 첫 행(헤더) 제외
+      allReports = parsed.data.slice(1).map(row => ({
+        date: cleanDate(row[0]),
+        author: cleanAuthor(row[1]),
+        content: String(row[2] || '').trim(),
+        share: String(row[3] || '').trim()
+      })).filter(r => r.date && r.author);
+
+      const now = new Date();
+      document.getElementById('last-updated').textContent = 
+        '마지막 갱신 · ' + fmtNow(now);
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      render();
+    } catch (e) {
+      onDataError(e.message);
+    }
+  }
+
+  function cleanDate(d) {
+    if (!d) return '';
+    const s = String(d).trim();
+    // yyyy-mm-dd 형식이면 그대로
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+    // 다른 형식 시도
+    const date = new Date(s);
+    if (!isNaN(date)) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    return '';
+  }
+
+  function cleanAuthor(a) {
+    if (!a) return '';
+    return String(a).replace(/^@/, '').trim();
+  }
+
+  function onDataError(err) {
+    document.getElementById('loader').style.display = 'none';
+    const errBox = document.getElementById('error');
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<strong>데이터 로딩 실패</strong><br>${err}<br><br>가능한 원인:<br>• 시트가 "웹에 게시" 해제됨<br>• 인터넷 연결 문제<br>• 시트 URL 변경됨`;
+  }
+
+  function fmtNow(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}.${m}.${day} ${h}:${min}`;
+  }
+
+  function render() {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    const startCur = new Date(today);
+    startCur.setDate(today.getDate() - currentPeriod + 1);
+    startCur.setHours(0, 0, 0, 0);
+    
+    const startPrev = new Date(startCur);
+    startPrev.setDate(startCur.getDate() - currentPeriod);
+    const endPrev = new Date(startCur);
+    endPrev.setDate(endPrev.getDate() - 1);
+    endPrev.setHours(23, 59, 59, 999);
+
+    const inRange = (d, start, end) => {
+      const date = new Date(d);
+      return date >= start && date <= end;
+    };
+
+    const curWeek = allReports.filter(r => inRange(r.date, startCur, today));
+    const prevWeek = allReports.filter(r => inRange(r.date, startPrev, endPrev));
+
+    document.getElementById('data-range').textContent = 
+      `현재: ${fmtDateK(startCur)}~${fmtDateK(today)} / 비교: ${fmtDateK(startPrev)}~${fmtDateK(endPrev)}`;
+    document.getElementById('bar-period').textContent = 
+      `// 이전(${fmtDateK(startPrev)}~) vs 현재(${fmtDateK(startCur)}~)`;
+
+    renderKPI(curWeek, prevWeek);
+    renderWowBars(curWeek, prevWeek);
+    renderInsights(curWeek, prevWeek);
+    renderMatrix(curWeek, prevWeek, startPrev, today);
+    renderDept(curWeek, prevWeek);
+    renderList(curWeek);
+  }
+
+  function fmtDateK(d) {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${m}.${day}`;
+  }
+
+  function fmtDateISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function countBy(arr, key) {
+    const c = {};
+    arr.forEach(r => { c[r[key]] = (c[r[key]] || 0) + 1; });
+    return c;
+  }
+
+  function deltaTag(d) {
+    if (d > 0) return { cls: 'up', text: '▲ +' + d };
+    if (d < 0) return { cls: 'down', text: '▼ ' + d };
+    return { cls: 'flat', text: '━ 0' };
+  }
+
+  function renderKPI(cur, prev) {
+    const cn = cur.length, pn = prev.length;
+    const cd = cn - pn;
+    const pct = pn > 0 ? Math.round((cd / pn) * 100) : 0;
+
+    const cAuth = new Set(cur.map(r => r.author));
+    const pAuth = new Set(prev.map(r => r.author));
+    const aDelta = cAuth.size - pAuth.size;
+
+    const cAvg = cAuth.size > 0 ? (cn / cAuth.size).toFixed(1) : '0.0';
+    const pAvg = pAuth.size > 0 ? (pn / pAuth.size).toFixed(1) : '0.0';
+    const avgDelta = (cAvg - pAvg).toFixed(1);
+
+    const cShare = cur.filter(r => r.share && r.share !== '-' && r.share !== '없음').length;
+    const pShare = prev.filter(r => r.share && r.share !== '-' && r.share !== '없음').length;
+    const sDelta = cShare - pShare;
+
+    const cDays = new Set(cur.map(r => r.date)).size;
+    const cDaily = cDays > 0 ? (cn / cDays).toFixed(1) : '0';
+
+    const k1 = deltaTag(cd);
+    const k2 = deltaTag(aDelta);
+    const k3 = avgDelta > 0 ? {cls:'up',text:'▲ +' + avgDelta} : avgDelta < 0 ? {cls:'down',text:'▼ ' + avgDelta} : {cls:'flat',text:'━ 동일'};
+    const k4 = deltaTag(sDelta);
+
+    document.getElementById('kpi-row').innerHTML = `
+      <div class="kpi accent">
+        <div class="label">총 보고 건수</div>
+        <div class="value">${cn}<span class="unit">건</span></div>
+        <div class="wow ${k1.cls}">${k1.text}${pn > 0 ? ` (${pct > 0 ? '+' : ''}${pct}%)` : ''} <span style="opacity:0.6">vs ${pn}건</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">활성 작성자</div>
+        <div class="value">${cAuth.size}<span class="unit">명</span></div>
+        <div class="wow ${k2.cls}">${k2.text}명 <span style="opacity:0.6">vs ${pAuth.size}명</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">1인 평균 보고</div>
+        <div class="value">${cAvg}<span class="unit">건</span></div>
+        <div class="wow ${k3.cls}">${k3.text} <span style="opacity:0.6">vs ${pAvg}건</span></div>
+      </div>
+      <div class="kpi copper">
+        <div class="label">타부서 공유</div>
+        <div class="value">${cShare}<span class="unit">건</span></div>
+        <div class="wow">${k4.text}건 <span style="opacity:0.7">vs ${pShare}건</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">일평균 보고</div>
+        <div class="value">${cDaily}<span class="unit">건/일</span></div>
+        <div class="wow flat">${cDays}일 활동</div>
+      </div>
+    `;
+  }
+
+  function renderWowBars(cur, prev) {
+    const cc = countBy(cur, 'author');
+    const pc = countBy(prev, 'author');
+    const allAuthors = new Set([...Object.keys(cc), ...Object.keys(pc)]);
+    const authors = Array.from(allAuthors).sort((a, b) => (cc[b] || 0) - (cc[a] || 0));
+    
+    if (authors.length === 0) {
+      document.getElementById('wow-bars').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: rgba(245,239,230,0.6); padding: 60px 0;">데이터 없음</div>';
+      document.getElementById('wow-legend').innerHTML = '';
+      return;
+    }
+
+    const max = Math.max(...authors.map(a => Math.max(cc[a] || 0, pc[a] || 0)), 1);
+    document.getElementById('wow-bars').style.gridTemplateColumns = `repeat(${authors.length}, 1fr)`;
+    
+    const html = authors.map(author => {
+      const cv = cc[author] || 0;
+      const pv = pc[author] || 0;
+      const delta = cv - pv;
+      const ch = Math.max((cv / max * 100), 2);
+      const ph = Math.max((pv / max * 100), 2);
+      const dt = delta > 0 ? {cls:'up', text:'▲ +' + delta} : delta < 0 ? {cls:'down', text:'▼ ' + delta} : {cls:'flat', text:'━ 0'};
+      return `
+        <div class="wow-bar-group">
+          <div class="wow-bar-pair">
+            <div class="wow-bar prev" style="height: ${ph}%"><span class="bar-val">${pv}</span></div>
+            <div class="wow-bar cur" style="height: ${ch}%"><span class="bar-val">${cv}</span></div>
+          </div>
+          <div class="wow-bar-label">${author}</div>
+          <div class="wow-bar-delta ${dt.cls}">${dt.text}</div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('wow-bars').innerHTML = html;
+
+    const upCount = authors.filter(a => (cc[a] || 0) > (pc[a] || 0)).length;
+    const downCount = authors.filter(a => (cc[a] || 0) < (pc[a] || 0)).length;
+    const flatCount = authors.length - upCount - downCount;
+    
+    document.getElementById('wow-legend').innerHTML = `
+      <div><span class="swatch" style="background: rgba(245, 239, 230, 0.3);"></span>이전 기간</div>
+      <div><span class="swatch" style="background: var(--copper);"></span>현재 기간</div>
+      <div style="color: var(--copper-light)">▲ 활동 증가 ${upCount}명</div>
+      <div style="color: #C9C2B5">▼ 감소 ${downCount}명</div>
+      <div style="color: #888073">━ 동일 ${flatCount}명</div>
+    `;
+  }
+
+  function renderInsights(cur, prev) {
+    const cc = countBy(cur, 'author');
+    const pc = countBy(prev, 'author');
+    const allAuthors = new Set([...Object.keys(cc), ...Object.keys(pc)]);
+    
+    const changes = Array.from(allAuthors).map(a => ({
+      author: a, cur: cc[a] || 0, prev: pc[a] || 0, delta: (cc[a] || 0) - (pc[a] || 0)
+    }));
+
+    const newActive = changes.filter(c => c.prev === 0 && c.cur > 0).sort((a, b) => b.cur - a.cur);
+    const surged = changes.filter(c => c.prev > 0 && c.delta > 0).sort((a, b) => b.delta - a.delta);
+    const dropped = changes.filter(c => c.delta < 0).sort((a, b) => a.delta - b.delta);
+    const dropOut = changes.filter(c => c.prev > 0 && c.cur === 0).sort((a, b) => b.prev - a.prev);
+
+    const cards = [];
+    if (newActive[0]) {
+      cards.push({
+        label: '신규 활성화', person: newActive[0].author,
+        delta: `0 → ${newActive[0].cur}건 (▲ +${newActive[0].cur})`,
+        note: '이전 기간에 보고 없음 → 현재 활동 시작', cls: 'up'
+      });
+    }
+    if (surged[0]) {
+      cards.push({
+        label: '활동량 급증', person: surged[0].author,
+        delta: `${surged[0].prev} → ${surged[0].cur}건 (▲ +${surged[0].delta})`,
+        note: `${Math.round(surged[0].cur / surged[0].prev * 10) / 10}배 증가 — 가장 큰 활동 증가`, cls: 'up'
+      });
+    }
+    if (surged[1] && surged[1].delta > 0) {
+      cards.push({
+        label: '활동량 증가', person: surged[1].author,
+        delta: `${surged[1].prev} → ${surged[1].cur}건 (▲ +${surged[1].delta})`,
+        note: '꾸준한 활동량 증가', cls: 'up'
+      });
+    }
+    if (dropOut[0]) {
+      cards.push({
+        label: '활동 중단', person: dropOut[0].author,
+        delta: `${dropOut[0].prev} → 0건 (▼ -${dropOut[0].prev})`,
+        note: '이전 기간 활동 후 보고 없음', cls: 'down'
+      });
+    } else if (dropped[0]) {
+      cards.push({
+        label: '활동량 감소', person: dropped[0].author,
+        delta: `${dropped[0].prev} → ${dropped[0].cur}건 (▼ ${dropped[0].delta})`,
+        note: '가장 큰 활동량 감소', cls: 'down'
+      });
+    }
+
+    while (cards.length < 4) {
+      cards.push({label: '—', person: '—', delta: '—', note: '비교 데이터 부족', cls: 'flat'});
+    }
+
+    document.getElementById('insight-grid').innerHTML = cards.slice(0, 4).map(c => `
+      <div class="insight ${c.cls}">
+        <div class="label">${c.label}</div>
+        <div class="person">${c.person}</div>
+        <div class="delta-line">${c.delta}</div>
+        <div class="note">${c.note}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderMatrix(cur, prev, startPrev, today) {
+    const dates = [];
+    const c = new Date(startPrev);
+    while (c <= today) {
+      dates.push(new Date(c));
+      c.setDate(c.getDate() + 1);
+    }
+    const half = Math.floor(dates.length / 2);
+    
+    const allRpts = [...cur, ...prev];
+    const counts = {};
+    const authors = new Set();
+    allRpts.forEach(r => {
+      authors.add(r.author);
+      const key = r.author + '|' + r.date;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    
+    const authorList = Array.from(authors).sort();
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    let html = '<thead>';
+    html += '<tr><th class="author-col" rowspan="2" style="vertical-align: bottom;">작성자</th>';
+    html += `<th class="week-header" colspan="${half}">이전 기간</th>`;
+    html += `<th class="week-header cur" colspan="${dates.length - half}">현재 기간</th>`;
+    html += '<th rowspan="2" style="vertical-align: bottom;">이전</th><th rowspan="2" style="vertical-align: bottom;">현재</th><th rowspan="2" style="vertical-align: bottom;">증감</th></tr><tr>';
+    
+    dates.forEach((d, i) => {
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const wd = weekdays[d.getDay()];
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const dividerClass = (i === half - 1) ? 'week-divider' : '';
+      html += `<th class="${dividerClass}"><span class="day">${m}.${day}</span><span class="weekday" ${isWeekend ? 'style="color: var(--copper)"' : ''}>${wd}</span></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    authorList.forEach(author => {
+      html += `<tr><td class="author">${author}<span class="dept">${DEPT_MAP[author] || '—'}</span></td>`;
+      let prevSum = 0, curSum = 0;
+      dates.forEach((d, i) => {
+        const dateStr = fmtDateISO(d);
+        const cnt = counts[author + '|' + dateStr] || 0;
+        if (i < half) prevSum += cnt;
+        else curSum += cnt;
+        const dividerClass = (i === half - 1) ? 'week-divider' : '';
+        if (cnt > 0) html += `<td class="cell has ${dividerClass}">${cnt}</td>`;
+        else html += `<td class="cell empty ${dividerClass}">·</td>`;
+      });
+      const dlt = curSum - prevSum;
+      const dt = dlt > 0 ? 'up' : dlt < 0 ? 'down' : 'flat';
+      const dText = dlt > 0 ? '▲ +' + dlt : dlt < 0 ? '▼ ' + dlt : '━ 0';
+      html += `<td class="subtotal">${prevSum}</td><td class="subtotal cur">${curSum}</td><td class="delta-cell ${dt}">${dText}</td>`;
+      html += '</tr>';
+    });
+
+    html += '<tr style="background: var(--ivory); font-weight: 700;"><td class="author" style="color: var(--copper);">일별 합계</td>';
+    let prevTotal = 0, curTotal = 0;
+    dates.forEach((d, i) => {
+      const dateStr = fmtDateISO(d);
+      let sum = 0;
+      authorList.forEach(a => { sum += (counts[a + '|' + dateStr] || 0); });
+      if (i < half) prevTotal += sum;
+      else curTotal += sum;
+      const dividerClass = (i === half - 1) ? 'week-divider' : '';
+      html += sum > 0 ? `<td class="cell has ${dividerClass}">${sum}</td>` : `<td class="cell empty ${dividerClass}">·</td>`;
+    });
+    const tDelta = curTotal - prevTotal;
+    const tdt = tDelta > 0 ? 'up' : tDelta < 0 ? 'down' : 'flat';
+    const tPct = prevTotal > 0 ? Math.round(tDelta / prevTotal * 100) : 0;
+    const tText = tDelta > 0 ? `▲ +${tPct}%` : tDelta < 0 ? `▼ ${tPct}%` : '━ 0%';
+    html += `<td class="subtotal" style="color: var(--copper)">${prevTotal}</td><td class="subtotal cur" style="font-size: 14px;">${curTotal}</td><td class="delta-cell ${tdt}" style="font-size: 13px;">${tText}</td>`;
+    html += '</tr></tbody>';
+    
+    document.getElementById('matrix').innerHTML = html;
+  }
+
+  function renderDept(cur, prev) {
+    const cDept = {}, pDept = {};
+    cur.forEach(r => {
+      const d = DEPT_MAP[r.author] || '기타';
+      cDept[d] = (cDept[d] || 0) + 1;
+    });
+    prev.forEach(r => {
+      const d = DEPT_MAP[r.author] || '기타';
+      pDept[d] = (pDept[d] || 0) + 1;
+    });
+
+    const members = {};
+    Object.entries(DEPT_MAP).forEach(([author, dept]) => {
+      if (!members[dept]) members[dept] = [];
+      members[dept].push(author);
+    });
+
+    const html = DEPT_ORDER.map(dept => {
+      const cv = cDept[dept] || 0;
+      const pv = pDept[dept] || 0;
+      const delta = cv - pv;
+      const dt = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+      const dText = delta > 0 ? '▲ +' + delta + '건' : delta < 0 ? '▼ ' + delta + '건' : '━ 동일';
+      return `
+        <div class="dept-card ${DEPT_CLASS[dept] || ''}">
+          <h3>${dept}</h3>
+          <div class="members">${(members[dept] || []).join(' · ')}</div>
+          <div class="value">${cv}<span class="unit">건</span></div>
+          <div class="wow ${dt}">${dText} <span style="color:var(--muted)">vs ${pv}건</span></div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('dept-grid').innerHTML = html;
+  }
+
+  function renderList(reports) {
+    const sorted = [...reports].sort((a, b) => b.date.localeCompare(a.date));
+    const html = sorted.map((r, idx) => {
+      const preview = r.content.substring(0, 80).replace(/\n/g, ' ');
+      const hasShare = r.share && r.share !== '-' && r.share !== '없음' && r.share.trim() !== '';
+      return `
+        <div class="report-item" id="report-${idx}">
+          <div class="report-header" onclick="toggleReport(${idx})">
+            <div class="meta">
+              <span class="date">${r.date}</span>
+              <span class="author">${r.author}</span>
+              <span class="preview">${escapeHtml(preview)}${r.content.length > 80 ? '...' : ''}</span>
+            </div>
+            <span class="toggle"></span>
+          </div>
+          <div class="report-body">${escapeHtml(r.content)}${hasShare ? `<div class="share"><div class="share-label">타부서 공유</div>${escapeHtml(r.share)}</div>` : ''}</div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('report-list').innerHTML = html || '<div style="color: var(--muted); padding: 20px; text-align: center; background: white; border-radius: 6px; border: 1px solid var(--line);">기간 내 보고 없음</div>';
+    document.getElementById('list-count').textContent = `// ${sorted.length}건`;
+  }
+
+  function toggleReport(idx) {
+    document.getElementById('report-' + idx).classList.toggle('open');
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>

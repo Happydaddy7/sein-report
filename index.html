@@ -1422,15 +1422,17 @@
       </div>
 
       <section class="section" style="margin-top: 32px;">
-        <h2 class="section-title">최근 신청 <span class="count" id="recent-leave-count"></span></h2>
-        <div class="recent-leave-list" id="recent-leave"></div>
+        <h2 class="section-title">월별 × 인원별 매트릭스 <span class="count" id="leave-matrix-year"></span></h2>
+        <div class="matrix-wrap">
+          <table class="matrix" id="leave-matrix"></table>
+        </div>
       </section>
     </div>
 
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v14
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v15
   </footer>
 </div>
 
@@ -2331,16 +2333,23 @@
   }
 
   function renderLeaveTab() {
-    // 해당 월 연월차 데이터
+    // 해당 월 데이터 (달력용)
     const monthData = leaveData.filter(l => {
       const d = new Date(l.date);
       return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
     });
 
+    // 해당 연도 전체 (매트릭스용)
+    const yearData = leaveData.filter(l => {
+      const d = new Date(l.date);
+      return d.getFullYear() === calendarYear;
+    });
+
     document.getElementById('leave-badge').textContent = monthData.length;
+    document.getElementById('leave-matrix-year').textContent = `// ${calendarYear}년`;
 
     renderCalendar(monthData);
-    renderRecentLeave();
+    renderLeaveMatrix(yearData);
   }
 
   function renderCalendar(monthData) {
@@ -2422,37 +2431,68 @@
     document.getElementById('calendar-grid').innerHTML = html;
   }
 
-  function renderRecentLeave() {
-    // 전체 연월차 데이터에서 최신순 10개
-    const sorted = [...leaveData].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+  function renderLeaveMatrix(data) {
+    const allAuthors = Object.keys(DEPT_MAP);
+    const sortedAuthors = [];
+    DEPT_ORDER.forEach(dept => {
+      allAuthors.filter(a => DEPT_MAP[a] === dept).forEach(a => sortedAuthors.push(a));
+    });
 
-    if (sorted.length === 0) {
-      document.getElementById('recent-leave').innerHTML = '<div class="no-data"><div class="icon">📭</div><div>최근 신청 없음</div></div>';
-      document.getElementById('recent-leave-count').textContent = '';
-      return;
-    }
+    const matrix = {};
+    sortedAuthors.forEach(a => {
+      matrix[a] = {};
+      for (let m = 0; m < 12; m++) matrix[a][m] = 0;
+    });
 
-    const html = sorted.map(l => {
+    data.forEach(l => {
+      if (!matrix[l.author]) return;
       const d = new Date(l.date);
-      const wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-      const dept = DEPT_MAP[l.author] || '기타';
-      const cls = DEPT_CLASS[dept] || '';
-      return `
-        <div class="recent-leave-item ${cls}">
-          <div class="recent-leave-meta">
-            <span class="recent-leave-date">${fmtDateFull(d)} ${wd}</span>
-            <span class="recent-leave-author">${l.author}</span>
-            <span class="recent-leave-dept">${dept}</span>
-          </div>
-          <div class="recent-leave-info">
-            <span class="recent-leave-type leave-type-${l.typeKey}">${escapeHtml(l.type)}</span>
-            ${l.note ? `<span class="recent-leave-note">${escapeHtml(l.note)}</span>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-    document.getElementById('recent-leave').innerHTML = html;
-    document.getElementById('recent-leave-count').textContent = `// 최근 ${sorted.length}건`;
+      const m = d.getMonth();
+      matrix[l.author][m] += getLeaveDays(l.typeKey);
+    });
+
+    const currentMonth = (new Date().getFullYear() === calendarYear) ? new Date().getMonth() : -1;
+
+    let html = '<thead><tr><th class="author-col">작성자 / 부서</th>';
+    for (let m = 0; m < 12; m++) {
+      const isThisMonth = m === currentMonth;
+      const isViewingMonth = m === calendarMonth;
+      let thStyle = '';
+      if (isViewingMonth) thStyle = ' style="background: var(--copper);"';
+      else if (isThisMonth) thStyle = ' style="background: var(--navy-light);"';
+      html += `<th${thStyle}><span class="day">${m + 1}월</span></th>`;
+    }
+    html += '<th>합계</th></tr></thead><tbody>';
+
+    sortedAuthors.forEach(author => {
+      const dept = DEPT_MAP[author];
+      html += `<tr><td class="author-col"><span class="name">${author}</span><span class="dept">${dept}</span></td>`;
+      let total = 0;
+      for (let m = 0; m < 12; m++) {
+        const days = matrix[author][m];
+        total += days;
+        if (days > 0) {
+          html += `<td class="cell has">${fmtDays(days)}</td>`;
+        } else {
+          html += `<td class="cell empty">·</td>`;
+        }
+      }
+      html += `<td class="total">${fmtDays(total)}</td></tr>`;
+    });
+
+    // 월별 합계 행
+    html += '<tr class="total-row"><td class="author-col">월별 합계</td>';
+    let grandTotal = 0;
+    for (let m = 0; m < 12; m++) {
+      let monthSum = 0;
+      sortedAuthors.forEach(a => { monthSum += matrix[a][m]; });
+      grandTotal += monthSum;
+      html += `<td class="cell">${monthSum > 0 ? fmtDays(monthSum) : '·'}</td>`;
+    }
+    html += `<td class="total" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td></tr>`;
+    html += '</tbody>';
+
+    document.getElementById('leave-matrix').innerHTML = html;
   }
 
   function escapeHtml(text) {

@@ -1432,7 +1432,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v15
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v16
   </footer>
 </div>
 
@@ -2433,13 +2433,9 @@
 
   function renderLeaveMatrix(data) {
     const allAuthors = Object.keys(DEPT_MAP);
-    const sortedAuthors = [];
-    DEPT_ORDER.forEach(dept => {
-      allAuthors.filter(a => DEPT_MAP[a] === dept).forEach(a => sortedAuthors.push(a));
-    });
 
     const matrix = {};
-    sortedAuthors.forEach(a => {
+    allAuthors.forEach(a => {
       matrix[a] = {};
       for (let m = 0; m < 12; m++) matrix[a][m] = 0;
     });
@@ -2449,6 +2445,19 @@
       const d = new Date(l.date);
       const m = d.getMonth();
       matrix[l.author][m] += getLeaveDays(l.typeKey);
+    });
+
+    // 인원별 연간 합계 계산
+    const totals = {};
+    allAuthors.forEach(a => {
+      totals[a] = 0;
+      for (let m = 0; m < 12; m++) totals[a] += matrix[a][m];
+    });
+
+    // 합계 많은 순으로 정렬, 동률이면 이름 가나다순
+    const sortedAuthors = [...allAuthors].sort((a, b) => {
+      if (totals[b] !== totals[a]) return totals[b] - totals[a];
+      return a.localeCompare(b);
     });
 
     const currentMonth = (new Date().getFullYear() === calendarYear) ? new Date().getMonth() : -1;

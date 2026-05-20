@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세인바이오 업무보고 대시보드 · 주차별 정리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --navy: #0F2E4C;
+    --navy-light: #1E4A6E;
+    --copper: #B87333;
+    --copper-light: #D89556;
+    --ivory: #F5EFE6;
+    --paper: #FBF8F2;
+    --ink: #1A1A1A;
+    --muted: #6B6B6B;
+    --line: #E5DCC9;
+    --green: #4A7C59;
+    --amber: #D4A547;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 24px 16px;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+  }
+  .header .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .header .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .header .badge-live {
+    display: inline-block;
+    background: var(--copper);
+    color: white;
+    padding: 4px 10px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+  .header .badge-live::before {
+    content: '●';
+    color: #6EE07E;
+    margin-right: 4px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  /* LOADER */
+  #loader {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  #loader .spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--ivory);
+    border-top-color: var(--copper);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error {
+    background: #FFF3F3;
+    border: 1px solid #E8B4B4;
+    color: #8B3A3A;
+    padding: 16px;
+    border-radius: 6px;
+    margin: 20px 0;
+    display: none;
+  }
+
+  /* WEEK NAVIGATOR */
+  .week-nav {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--ivory);
+    padding: 20px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .week-nav .nav-arrow {
+    background: rgba(245, 239, 230, 0.15);
+    border: 1px solid rgba(245, 239, 230, 0.3);
+    color: var(--ivory);
+    font-size: 18px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .week-nav .nav-arrow:hover {
+    background: var(--copper);
+    border-color: var(--copper);
+  }
+  .week-nav .week-info { text-align: center; flex: 1; }
+  .week-nav .week-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--copper-light);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .week-nav .week-range {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+  .week-nav .week-quick {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .week-nav .week-quick button {
+    background: transparent;
+    border: 1px solid rgba(245, 239, 230, 0.4);
+    color: var(--ivory);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .week-nav .week-quick button.active,
+  .week-nav .week-quick button:hover {
+    background: var(--copper);
+    border-color: var(--copper);
+  }
+  .week-nav .refresh-btn {
+    background: var(--copper);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+  }
+
+  /* KPI */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    border-radius: 6px;
+  }
+  .kpi .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .kpi .value {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .kpi .unit { font-size: 13px; color: var(--muted); margin-left: 4px; }
+  .kpi .sub { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+  /* SECTION */
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background: var(--copper);
+  }
+  .section-title .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* DEPT CARDS */
+  .dept-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .dept-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--navy);
+    padding: 18px 20px;
+    border-radius: 4px;
+  }
+  .dept-card.trade { border-top-color: var(--copper); }
+  .dept-card.finance { border-top-color: var(--green); }
+  .dept-card.strategy { border-top-color: var(--amber); }
+  .dept-card .dept-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .dept-card h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .dept-card .dept-count {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--copper);
+  }
+  .dept-card .dept-count .unit {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Pretendard';
+    font-weight: 400;
+    margin-left: 2px;
+  }
+  .dept-card .dept-members {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .dept-card .member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+  }
+  .dept-card .member-row .name { color: var(--ink); font-weight: 500; }
+  .dept-card .member-row .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--copper);
+    font-size: 11px;
+  }
+  .dept-card .member-row .count.zero { color: var(--line); }
+
+  /* AUTHOR CARDS */
+  .author-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 14px;
+  }
+  .author-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--navy);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .author-card.trade { border-left-color: var(--copper); }
+  .author-card.finance { border-left-color: var(--green); }
+  .author-card.strategy { border-left-color: var(--amber); }
+  .author-card-head {
+    padding: 14px 18px;
+    background: var(--ivory);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .author-card-head .who {
+    display: flex;
+    flex-direction: column;
+  }
+  .author-card-head .name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .author-card-head .dept-tag {
+    font-size: 10px;
+    color: var(--copper);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+  .author-card-head .count-box {
+    text-align: right;
+  }
+  .author-card-head .count-box .num {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--copper);
+    line-height: 1;
+  }
+  .author-card-head .count-box .lbl {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .author-card-body {
+    padding: 8px 0;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .author-card-body::-webkit-scrollbar { width: 6px; }
+  .author-card-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+  .mini-report {
+    padding: 10px 18px;
+    border-bottom: 1px dashed var(--line);
+    cursor: pointer;
+  }
+  .mini-report:hover { background: var(--paper); }
+  .mini-report:last-child { border-bottom: none; }
+  .mini-report .date-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .mini-report .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--navy);
+    font-weight: 700;
+    background: var(--ivory);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .mini-report .toggle {
+    color: var(--copper);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .mini-report.expanded .toggle::before { content: '−'; }
+  .mini-report:not(.expanded) .toggle::before { content: '+'; }
+  .mini-report .preview {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .mini-report.expanded .preview {
+    -webkit-line-clamp: unset;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+  .mini-report .share {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+    display: none;
+  }
+  .mini-report.expanded .share { display: block; }
+  .mini-report .share-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--copper);
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+  }
+  .mini-report .share-content {
+    font-size: 12px;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+
+  .empty-author {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* NO DATA */
+  .no-data {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+    border-radius: 6px;
+  }
+  .no-data .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 900px) {
+    body { padding: 16px 10px; font-size: 13px; }
+    .header h1 { font-size: 24px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .kpi .value { font-size: 26px; }
+    .dept-grid { grid-template-columns: repeat(2, 1fr); }
+    .author-grid { grid-template-columns: 1fr; }
+    .week-nav { padding: 14px 16px; }
+    .week-nav .week-range { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div>
+      <div class="eyebrow">WEEKLY OPERATIONS BRIEF · LIVE</div>
+      <h1>업무보고 대시보드</h1>
+      <div class="subtitle">세인바이오 · 주차별 인원·부서 활동 정리</div>
+    </div>
+    <div class="meta">
+      <span class="badge-live">LIVE</span>
+      <div id="last-updated">마지막 갱신 · 로딩중...</div>
+    </div>
+  </header>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div>시트에서 데이터를 불러오는 중...</div>
+  </div>
+
+  <div id="error"></div>
+
+  <div id="content" style="display: none;">
+
+    <!-- WEEK NAVIGATOR -->
+    <div class="week-nav">
+      <button class="nav-arrow" onclick="changeWeek(-1)">◀</button>
+      <div class="week-info">
+        <div class="week-label" id="week-label"></div>
+        <div class="week-range" id="week-range"></div>
+      </div>
+      <div class="week-quick">
+        <button class="quick-btn active" onclick="goToWeek(0)" data-offset="0">이번주</button>
+        <button class="quick-btn" onclick="goToWeek(-1)" data-offset="-1">지난주</button>
+        <button class="quick-btn" onclick="goToWeek(-2)" data-offset="-2">2주전</button>
+        <button class="refresh-btn" onclick="loadData()">🔄</button>
+      </div>
+      <button class="nav-arrow" onclick="changeWeek(1)">▶</button>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- DEPT CARDS -->
+    <section class="section">
+      <h2 class="section-title">부서별 업무보고 <span class="count" id="dept-count"></span></h2>
+      <div class="dept-grid" id="dept-grid"></div>
+    </section>
+
+    <!-- AUTHOR CARDS -->
+    <section class="section">
+      <h2 class="section-title">인원별 업무보고 <span class="count" id="author-count"></span></h2>
+      <div id="author-container"></div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    SAEIN BIO · 시트 자동 연동 · 작성 이병준 팀장 · v2
+  </footer>
+</div>
+
+<script>
+  // ⭐ 시트 CSV URL
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTASu9EZlZlaMX3y1dvql6pbVJgOvdTF7mhjdEIUSBA-OmFJXLPx3tX7wW-Ovv9NWdbhbPSkLS0OVMS/pub?output=csv';
+
+  // 작성자 → 부서 매핑
+  const DEPT_MAP = {
+    '이재석': '영업', '박제영': '영업', '김휘동': '영업', '이복진': '영업',
+    '정인상': '영업', '이충선': '영업',
+    '왕려원': '무역', '성유진': '무역', '김선이': '무역',
+    '류미화': '자금', '황유나': '자금', '박혜련': '자금',
+    '이병준': '전략'
+  };
+  const DEPT_ORDER = ['영업', '무역', '자금', '전략'];
+  const DEPT_CLASS = { '영업': '', '무역': 'trade', '자금': 'finance', '전략': 'strategy' };
+
+  let allReports = [];
+  let weekOffset = 0; // 0 = 이번주, -1 = 지난주
+
+  window.addEventListener('DOMContentLoaded', loadData);
+
+  async function loadData() {
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+
+    try {
+      const url = CSV_URL + '&_=' + Date.now();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('네트워크 오류: ' + response.status);
+      const csvText = await response.text();
+
+      const parsed = Papa.parse(csvText, { header: false, skipEmptyLines: true });
+
+      allReports = parsed.data.slice(1).map(row => ({
+        date: cleanDate(row[0]),
+        author: cleanAuthor(row[1]),
+        content: String(row[2] || '').trim(),
+        share: String(row[3] || '').trim()
+      })).filter(r => r.date && r.author);
+
+      document.getElementById('last-updated').textContent = '마지막 갱신 · ' + fmtNow(new Date());
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      render();
+    } catch (e) {
+      onDataError(e.message);
+    }
+  }
+
+  function cleanDate(d) {
+    if (!d) return '';
+    const s = String(d).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+    const date = new Date(s);
+    if (!isNaN(date)) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    return '';
+  }
+
+  function cleanAuthor(a) {
+    if (!a) return '';
+    return String(a).replace(/^@/, '').trim();
+  }
+
+  function onDataError(err) {
+    document.getElementById('loader').style.display = 'none';
+    const errBox = document.getElementById('error');
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<strong>데이터 로딩 실패</strong><br>${err}`;
+  }
+
+  function fmtNow(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}.${m}.${day} ${h}:${min}`;
+  }
+
+  function fmtDateK(d) {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${m}.${day}`;
+  }
+
+  function fmtDateISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d;
+  }
+
+  function getWeekRange(offset = 0) {
+    const today = new Date();
+    const monday = getMonday(today);
+    monday.setDate(monday.getDate() + offset * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  }
+
+  function getISOWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  }
+
+  function goToWeek(offset) {
+    weekOffset = offset;
+    document.querySelectorAll('.quick-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.offset) === offset);
+    });
+    render();
+  }
+
+  function changeWeek(direction) {
+    weekOffset += direction;
+    document.querySelectorAll('.quick-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.offset) === weekOffset);
+    });
+    render();
+  }
+
+  function render() {
+    const { start, end } = getWeekRange(weekOffset);
+    const weekNum = getISOWeek(start);
+
+    document.getElementById('week-label').textContent = 
+      `${start.getFullYear()} · W${weekNum} · ${getWeekName(weekOffset)}`;
+    document.getElementById('week-range').textContent = 
+      `${fmtDateK(start)} (월) ~ ${fmtDateK(end)} (일)`;
+
+    const weekReports = allReports.filter(r => {
+      const d = new Date(r.date);
+      return d >= start && d <= end;
+    });
+
+    renderKPI(weekReports, start, end);
+    renderDept(weekReports);
+    renderAuthors(weekReports);
+  }
+
+  function getWeekName(offset) {
+    if (offset === 0) return '이번주';
+    if (offset === -1) return '지난주';
+    if (offset === -2) return '2주전';
+    if (offset === 1) return '다음주';
+    if (offset > 0) return offset + '주 후';
+    return Math.abs(offset) + '주전';
+  }
+
+  function renderKPI(reports, start, end) {
+    const totalCount = reports.length;
+    const authors = new Set(reports.map(r => r.author));
+    const activeDays = new Set(reports.map(r => r.date)).size;
+    const shareCount = reports.filter(r => 
+      r.share && r.share !== '-' && r.share !== '없음' && r.share.length > 0
+    ).length;
+
+    // 가장 활발한 날
+    const dateCount = {};
+    reports.forEach(r => { dateCount[r.date] = (dateCount[r.date] || 0) + 1; });
+    let mostActiveDate = '—', mostActiveCount = 0;
+    Object.entries(dateCount).forEach(([d, c]) => {
+      if (c > mostActiveCount) { mostActiveCount = c; mostActiveDate = d; }
+    });
+    const mostActiveLabel = mostActiveDate !== '—' 
+      ? fmtDateK(new Date(mostActiveDate)) + ' (' + mostActiveCount + '건)'
+      : '—';
+
+    document.getElementById('kpi-row').innerHTML = `
+      <div class="kpi">
+        <div class="label">총 보고 건수</div>
+        <div class="value">${totalCount}<span class="unit">건</span></div>
+        <div class="sub">${activeDays}일 활동</div>
+      </div>
+      <div class="kpi">
+        <div class="label">활성 작성자</div>
+        <div class="value">${authors.size}<span class="unit">명</span></div>
+        <div class="sub">전체 ${Object.keys(DEPT_MAP).length}명 중</div>
+      </div>
+      <div class="kpi">
+        <div class="label">타부서 공유</div>
+        <div class="value">${shareCount}<span class="unit">건</span></div>
+        <div class="sub">전체 ${totalCount}건 중</div>
+      </div>
+      <div class="kpi">
+        <div class="label">최다 보고일</div>
+        <div class="value" style="font-size: 22px;">${mostActiveLabel}</div>
+        <div class="sub">하루 최다 활동</div>
+      </div>
+    `;
+  }
+
+  function renderDept(reports) {
+    const deptCount = {};
+    const deptMembers = {};
+    DEPT_ORDER.forEach(d => { deptCount[d] = 0; deptMembers[d] = {}; });
+    
+    Object.entries(DEPT_MAP).forEach(([author, dept]) => {
+      if (!deptMembers[dept]) deptMembers[dept] = {};
+      deptMembers[dept][author] = 0;
+    });
+
+    reports.forEach(r => {
+      const dept = DEPT_MAP[r.author] || '기타';
+      if (DEPT_ORDER.includes(dept)) {
+        deptCount[dept] = (deptCount[dept] || 0) + 1;
+        deptMembers[dept][r.author] = (deptMembers[dept][r.author] || 0) + 1;
+      }
+    });
+
+    const html = DEPT_ORDER.map(dept => {
+      const members = deptMembers[dept] || {};
+      const memberList = Object.keys(members).sort((a, b) => members[b] - members[a]);
+      const activeMembers = memberList.filter(m => members[m] > 0).length;
+      
+      return `
+        <div class="dept-card ${DEPT_CLASS[dept] || ''}">
+          <div class="dept-head">
+            <h3>${dept}</h3>
+            <div class="dept-count">${deptCount[dept]}<span class="unit">건</span></div>
+          </div>
+          <div class="dept-members">활성 ${activeMembers}/${memberList.length}명</div>
+          ${memberList.map(m => `
+            <div class="member-row">
+              <span class="name">${m}</span>
+              <span class="count ${members[m] === 0 ? 'zero' : ''}">${members[m]}건</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('dept-grid').innerHTML = html;
+    document.getElementById('dept-count').textContent = `// 4개 부서`;
+  }
+
+  function renderAuthors(reports) {
+    if (reports.length === 0) {
+      document.getElementById('author-container').innerHTML = 
+        '<div class="no-data"><div class="icon">📭</div><div>이 주차에 보고된 내용이 없습니다.</div></div>';
+      document.getElementById('author-count').textContent = '';
+      return;
+    }
+
+    // 작성자별로 그룹화
+    const grouped = {};
+    reports.forEach(r => {
+      if (!grouped[r.author]) grouped[r.author] = [];
+      grouped[r.author].push(r);
+    });
+
+    // 보고 건수 많은 순으로 정렬
+    const authors = Object.keys(grouped).sort((a, b) => grouped[b].length - grouped[a].length);
+
+    let mid = 0;
+    const html = `<div class="author-grid">${authors.map(author => {
+      const reports = grouped[author].sort((a, b) => a.date.localeCompare(b.date));
+      const dept = DEPT_MAP[author] || '기타';
+      const cls = DEPT_CLASS[dept] || '';
+      
+      const reportHtml = reports.map(r => {
+        const cardId = `mr-${mid++}`;
+        const hasShare = r.share && r.share !== '-' && r.share !== '없음' && r.share.length > 0;
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        const dObj = new Date(r.date);
+        const wd = weekdays[dObj.getDay()];
+        return `
+          <div class="mini-report" id="${cardId}" onclick="document.getElementById('${cardId}').classList.toggle('expanded')">
+            <div class="date-line">
+              <span class="date">${fmtDateK(dObj)} ${wd}</span>
+              <span class="toggle"></span>
+            </div>
+            <div class="preview">${escapeHtml(r.content)}</div>
+            ${hasShare ? `
+              <div class="share">
+                <div class="share-label">타부서 공유</div>
+                <div class="share-content">${escapeHtml(r.share)}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      return `
+        <div class="author-card ${cls}">
+          <div class="author-card-head">
+            <div class="who">
+              <div class="name">${author}</div>
+              <div class="dept-tag">${dept}</div>
+            </div>
+            <div class="count-box">
+              <div class="num">${reports.length}</div>
+              <div class="lbl">건</div>
+            </div>
+          </div>
+          <div class="author-card-body">${reportHtml}</div>
+        </div>
+      `;
+    }).join('')}</div>`;
+
+    document.getElementById('author-container').innerHTML = html;
+    document.getElementById('author-count').textContent = `// ${authors.length}명 활동`;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>

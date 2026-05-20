@@ -649,6 +649,8 @@
     color: var(--navy);
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: -0.02em;
   }
   .matrix td.cell.weekend {
     background: #F0EFEC;
@@ -1108,7 +1110,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v10
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v12
   </footer>
 </div>
 
@@ -1120,11 +1122,11 @@
     '이재석': '영업', '박제영': '영업', '김휘동': '영업', '이복진': '영업',
     '정인상': '영업', '이충선': '영업',
     '왕려원': '무역', '성유진': '무역', '김선이': '무역',
-    '류미화': '자금', '황유나': '자금', '박혜련': '자금',
-    '이병준': '전략'
+    '류미화': '관리', '황유나': '관리', '박혜련': '관리',
+    '이병준': '경영지원(기획)'
   };
-  const DEPT_ORDER = ['영업', '무역', '자금', '전략'];
-  const DEPT_CLASS = { '영업': '', '무역': 'trade', '자금': 'finance', '전략': 'strategy' };
+  const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)'];
+  const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy' };
 
   let allReports = [];
   let leaveData = [];
@@ -1684,10 +1686,12 @@
         const hasQuarterLeave = leaves.includes('quarter');
         total += cnt;
         
-        if (cnt > 0 && (hasHalfLeave || hasQuarterLeave)) {
-          // 보고함 + 반차/반반차: 같이 표시
-          const lbl = hasHalfLeave ? '반차' : '반반차';
-          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + ${lbl}">${cnt}+반</td>`;
+        if (cnt > 0 && hasQuarterLeave) {
+          // 보고함 + 반반차
+          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반반차">${cnt}+반반차</td>`;
+        } else if (cnt > 0 && hasHalfLeave) {
+          // 보고함 + 반차
+          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반차">${cnt}+반차</td>`;
         } else if (cnt > 0) {
           html += `<td class="cell has">${cnt}</td>`;
         } else if (isWeekend) {

@@ -657,7 +657,147 @@
     background: var(--paper);
   }
 
-  /* LEAVE TAB */
+  /* CALENDAR */
+  .calendar-nav {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: var(--ivory);
+    padding: 18px 24px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .calendar-nav .cal-nav-btn {
+    background: rgba(245, 239, 230, 0.15);
+    border: 1px solid rgba(245, 239, 230, 0.3);
+    color: var(--ivory);
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .calendar-nav .cal-nav-btn:hover {
+    background: var(--copper);
+    border-color: var(--copper);
+  }
+  .calendar-nav .cal-title {
+    text-align: center;
+    flex: 0 0 auto;
+    min-width: 240px;
+  }
+  .calendar-nav .cal-title #calendar-title {
+    display: block;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+  .calendar-nav .cal-subtitle {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--copper-light);
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+  }
+
+  .calendar-wrap {
+    background: white;
+    border: 1px solid var(--line);
+    padding: 16px;
+    border-radius: 8px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .calendar-weekday {
+    text-align: center;
+    padding: 10px 4px;
+    background: var(--ivory);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    border-radius: 4px;
+  }
+  .calendar-weekday.sunday { color: #B85556; }
+  .calendar-weekday.saturday { color: #4A6FA5; }
+  .calendar-day {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 6px 6px 8px;
+    min-height: 95px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .calendar-day-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--navy);
+    margin-bottom: 2px;
+  }
+  .calendar-day.weekend { background: #F0EFEC; }
+  .calendar-day.sunday .calendar-day-num { color: #B85556; }
+  .calendar-day.saturday .calendar-day-num { color: #4A6FA5; }
+  .calendar-day.other-month {
+    opacity: 0.35;
+    background: var(--paper);
+  }
+  .calendar-day.other-month .calendar-day-num { color: var(--muted); }
+  .calendar-day.today {
+    border: 2px solid var(--copper);
+    background: rgba(184, 115, 51, 0.06);
+    box-shadow: 0 0 0 2px rgba(184, 115, 51, 0.15);
+  }
+  .calendar-day.today .calendar-day-num {
+    color: var(--copper);
+    font-size: 14px;
+  }
+  .leave-tag {
+    display: block;
+    padding: 3px 6px;
+    font-size: 10px;
+    border-radius: 3px;
+    line-height: 1.3;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .leave-tag.full {
+    background: #FFF4D6;
+    color: #8B6F1E;
+    border-left: 3px solid #D4A547;
+  }
+  .leave-tag.half {
+    background: #FFE4C7;
+    color: #A05A1C;
+    border-left: 3px solid #D89556;
+  }
+  .leave-tag.quarter {
+    background: #FFF0E0;
+    color: #B07840;
+    border-left: 3px solid #E0B080;
+  }
+  .leave-tag .leave-tag-type {
+    font-size: 9px;
+    opacity: 0.85;
+    margin-left: 2px;
+    font-weight: 500;
+  }
+
+  /* LEAVE TAB - kept styles */
   .leave-bars-wrap {
     background: white;
     border: 1px solid var(--line);
@@ -1255,21 +1395,33 @@
 
     <!-- TAB 4: 연월차 현황 -->
     <div class="tab-content" id="tab-leave">
-      <div class="matrix-summary" id="leave-summary"></div>
-
-      <section class="section">
-        <h2 class="section-title">인원별 연간 누계 <span class="count" id="leave-bar-count"></span></h2>
-        <div class="leave-bars-wrap" id="leave-bars"></div>
-      </section>
-
-      <section class="section">
-        <h2 class="section-title">월별 × 인원별 매트릭스 <span class="count" id="leave-matrix-year"></span></h2>
-        <div class="matrix-wrap">
-          <table class="matrix" id="leave-matrix"></table>
+      
+      <!-- 달력 헤더 + 네비게이션 -->
+      <div class="calendar-nav">
+        <button class="cal-nav-btn" onclick="prevMonth()">◀</button>
+        <div class="cal-title">
+          <span id="calendar-title"></span>
+          <span class="cal-subtitle" id="calendar-subtitle"></span>
         </div>
-      </section>
+        <button class="cal-nav-btn" onclick="todayMonth()">오늘</button>
+        <button class="cal-nav-btn" onclick="nextMonth()">▶</button>
+      </div>
 
-      <section class="section">
+      <!-- 달력 -->
+      <div class="calendar-wrap">
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+
+      <!-- 달력 범례 -->
+      <div class="matrix-legend">
+        <div><span class="swatch" style="background: #FFF4D6;"></span>종일연차</div>
+        <div><span class="swatch" style="background: #FFE4C7;"></span>반차</div>
+        <div><span class="swatch" style="background: #FFF0E0;"></span>반반차</div>
+        <div><span class="swatch" style="background: #F0EFEC;"></span>주말</div>
+        <div><span class="swatch" style="background: rgba(184, 115, 51, 0.08); border: 2px solid var(--copper);"></span>오늘</div>
+      </div>
+
+      <section class="section" style="margin-top: 32px;">
         <h2 class="section-title">최근 신청 <span class="count" id="recent-leave-count"></span></h2>
         <div class="recent-leave-list" id="recent-leave"></div>
       </section>
@@ -1278,7 +1430,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v13
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v14
   </footer>
 </div>
 
@@ -1303,6 +1455,8 @@
   let selectedAuthor = '';
   let customStart = null;
   let customEnd = null;
+  let calendarMonth = new Date().getMonth();
+  let calendarYear = new Date().getFullYear();
 
   window.addEventListener('DOMContentLoaded', () => {
     loadData();
@@ -2132,7 +2286,7 @@
     document.getElementById('author-count').textContent = `// ${authors.length}명 활동`;
   }
 
-  // ============ 탭 4: 연월차 현황 ============
+  // ============ 탭 4: 연월차 현황 (달력 중심) ============
   function getLeaveDays(typeKey) {
     if (typeKey === 'full') return 1.0;
     if (typeKey === 'half') return 0.5;
@@ -2144,157 +2298,133 @@
     return n.toFixed(2).replace(/\.?0+$/, '');
   }
 
-  function renderLeaveTab() {
-    const currentYear = new Date().getFullYear();
-    const yearData = leaveData.filter(l => {
-      const d = new Date(l.date);
-      return d.getFullYear() === currentYear;
-    });
-
-    document.getElementById('leave-badge').textContent = yearData.length;
-    document.getElementById('leave-matrix-year').textContent = `// ${currentYear}년`;
-
-    renderLeaveKPI(yearData);
-    renderLeaveBars(yearData);
-    renderLeaveMatrix(yearData);
-    renderRecentLeave(yearData);
+  function getTypeLabel(typeKey) {
+    if (typeKey === 'full') return '연차';
+    if (typeKey === 'half') return '반차';
+    if (typeKey === 'quarter') return '반반차';
+    return '';
   }
 
-  function renderLeaveKPI(data) {
-    let totalDays = 0;
-    let fullCount = 0, halfCount = 0, quarterCount = 0;
-    const authors = new Set();
+  function prevMonth() {
+    calendarMonth--;
+    if (calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear--;
+    }
+    renderLeaveTab();
+  }
+
+  function nextMonth() {
+    calendarMonth++;
+    if (calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear++;
+    }
+    renderLeaveTab();
+  }
+
+  function todayMonth() {
     const now = new Date();
-    const thisMonth = now.getMonth();
-    let thisMonthDays = 0;
+    calendarMonth = now.getMonth();
+    calendarYear = now.getFullYear();
+    renderLeaveTab();
+  }
 
-    data.forEach(l => {
-      const days = getLeaveDays(l.typeKey);
-      totalDays += days;
-      authors.add(l.author);
-      if (l.typeKey === 'full') fullCount++;
-      else if (l.typeKey === 'half') halfCount++;
-      else if (l.typeKey === 'quarter') quarterCount++;
+  function renderLeaveTab() {
+    // 해당 월 연월차 데이터
+    const monthData = leaveData.filter(l => {
       const d = new Date(l.date);
-      if (d.getMonth() === thisMonth && d.getFullYear() === now.getFullYear()) {
-        thisMonthDays += days;
-      }
+      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
     });
 
-    document.getElementById('leave-summary').innerHTML = `
-      <div class="summary-card">
-        <div class="label">${now.getFullYear()}년 총 사용일</div>
-        <div class="value">${fmtDays(totalDays)}<span class="unit">일</span></div>
-      </div>
-      <div class="summary-card copper">
-        <div class="label">활성 사용자</div>
-        <div class="value">${authors.size}<span class="unit">명</span></div>
-      </div>
-      <div class="summary-card">
-        <div class="label">유형별 분포</div>
-        <div class="value" style="font-size: 15px; line-height: 1.4;">연차 ${fullCount} · 반차 ${halfCount} · 반반차 ${quarterCount}</div>
-      </div>
-      <div class="summary-card absent">
-        <div class="label">이번 달 사용</div>
-        <div class="value">${fmtDays(thisMonthDays)}<span class="unit">일</span></div>
-      </div>
-    `;
+    document.getElementById('leave-badge').textContent = monthData.length;
+
+    renderCalendar(monthData);
+    renderRecentLeave();
   }
 
-  function renderLeaveBars(data) {
-    const byAuthor = {};
-    data.forEach(l => {
-      const days = getLeaveDays(l.typeKey);
-      byAuthor[l.author] = (byAuthor[l.author] || 0) + days;
-    });
+  function renderCalendar(monthData) {
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const firstWeekday = firstDay.getDay();
+    const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const prevLastDay = new Date(calendarYear, calendarMonth, 0).getDate();
 
-    const authors = Object.keys(byAuthor).sort((a, b) => byAuthor[b] - byAuthor[a]);
-    if (authors.length === 0) {
-      document.getElementById('leave-bars').innerHTML = '<div style="padding: 40px; text-align: center; color: var(--muted);">연월차 데이터가 없습니다.</div>';
-      document.getElementById('leave-bar-count').textContent = '';
-      return;
-    }
-
-    const max = Math.max(...Object.values(byAuthor), 1);
-
-    const html = `<div class="leave-bar-list">${authors.map(author => {
-      const days = byAuthor[author];
-      const width = (days / max * 100).toFixed(1);
-      const dept = DEPT_MAP[author] || '기타';
-      return `
-        <div class="leave-bar-row">
-          <div class="leave-bar-name">${author}<span class="leave-bar-dept">${dept}</span></div>
-          <div class="leave-bar-bg"><div class="leave-bar-fill" style="width: ${width}%"></div></div>
-          <div class="leave-bar-days">${fmtDays(days)}<span>일</span></div>
-        </div>
-      `;
-    }).join('')}</div>`;
-    document.getElementById('leave-bars').innerHTML = html;
-    document.getElementById('leave-bar-count').textContent = `// ${authors.length}명`;
-  }
-
-  function renderLeaveMatrix(data) {
-    const allAuthors = Object.keys(DEPT_MAP);
-    const sortedAuthors = [];
-    DEPT_ORDER.forEach(dept => {
-      allAuthors.filter(a => DEPT_MAP[a] === dept).forEach(a => sortedAuthors.push(a));
-    });
-
-    const matrix = {};
-    sortedAuthors.forEach(a => {
-      matrix[a] = {};
-      for (let m = 0; m < 12; m++) matrix[a][m] = 0;
-    });
-
-    data.forEach(l => {
-      if (!matrix[l.author]) return;
+    // 연차 데이터를 일자별로 그룹화
+    const leavesByDay = {};
+    monthData.forEach(l => {
       const d = new Date(l.date);
-      const m = d.getMonth();
-      matrix[l.author][m] += getLeaveDays(l.typeKey);
+      const day = d.getDate();
+      if (!leavesByDay[day]) leavesByDay[day] = [];
+      leavesByDay[day].push(l);
     });
 
-    const currentMonth = new Date().getMonth();
+    // 일별 통계
+    let totalDays = 0;
+    monthData.forEach(l => { totalDays += getLeaveDays(l.typeKey); });
+    const uniqueUsers = new Set(monthData.map(l => l.author)).size;
 
-    let html = '<thead><tr><th class="author-col">작성자 / 부서</th>';
-    for (let m = 0; m < 12; m++) {
-      const isThisMonth = m === currentMonth;
-      html += `<th${isThisMonth ? ' style="background: var(--copper);"' : ''}><span class="day">${m + 1}월</span></th>`;
-    }
-    html += '<th>합계</th></tr></thead><tbody>';
+    document.getElementById('calendar-title').textContent = 
+      `${calendarYear}년 ${calendarMonth + 1}월`;
+    document.getElementById('calendar-subtitle').textContent = 
+      `사용 ${fmtDays(totalDays)}일 · ${uniqueUsers}명 · 신청 ${monthData.length}건`;
 
-    sortedAuthors.forEach(author => {
-      const dept = DEPT_MAP[author];
-      html += `<tr><td class="author-col"><span class="name">${author}</span><span class="dept">${dept}</span></td>`;
-      let total = 0;
-      for (let m = 0; m < 12; m++) {
-        const days = matrix[author][m];
-        total += days;
-        if (days > 0) {
-          html += `<td class="cell has">${fmtDays(days)}</td>`;
-        } else {
-          html += `<td class="cell empty">·</td>`;
-        }
-      }
-      html += `<td class="total">${fmtDays(total)}</td></tr>`;
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth;
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    let html = '';
+
+    // 요일 헤더
+    weekdays.forEach((wd, i) => {
+      const cls = i === 0 ? 'sunday' : i === 6 ? 'saturday' : '';
+      html += `<div class="calendar-weekday ${cls}">${wd}</div>`;
     });
 
-    // 월별 합계 행
-    html += '<tr class="total-row"><td class="author-col">월별 합계</td>';
-    let grandTotal = 0;
-    for (let m = 0; m < 12; m++) {
-      let monthSum = 0;
-      sortedAuthors.forEach(a => { monthSum += matrix[a][m]; });
-      grandTotal += monthSum;
-      html += `<td class="cell">${monthSum > 0 ? fmtDays(monthSum) : '·'}</td>`;
+    // 이전 달 빈 칸
+    for (let i = 0; i < firstWeekday; i++) {
+      const day = prevLastDay - firstWeekday + i + 1;
+      html += `<div class="calendar-day other-month"><div class="calendar-day-num">${day}</div></div>`;
     }
-    html += `<td class="total" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td></tr>`;
-    html += '</tbody>';
 
-    document.getElementById('leave-matrix').innerHTML = html;
+    // 현재 달
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(calendarYear, calendarMonth, day);
+      const weekday = date.getDay();
+      const isWeekend = weekday === 0 || weekday === 6;
+      const isToday = isCurrentMonth && today.getDate() === day;
+
+      let cls = 'calendar-day';
+      if (isWeekend) cls += ' weekend';
+      if (isToday) cls += ' today';
+      if (weekday === 0) cls += ' sunday';
+      if (weekday === 6) cls += ' saturday';
+
+      const dayLeaves = leavesByDay[day] || [];
+      const tagsHtml = dayLeaves.map(l => {
+        const lbl = getTypeLabel(l.typeKey);
+        return `<div class="leave-tag ${l.typeKey}" title="${escapeHtml(l.author + ' · ' + l.type + (l.note ? ' (' + l.note + ')' : ''))}">${l.author}<span class="leave-tag-type"> ${lbl}</span></div>`;
+      }).join('');
+
+      html += `<div class="${cls}">
+        <div class="calendar-day-num">${day}</div>
+        ${tagsHtml}
+      </div>`;
+    }
+
+    // 다음 달 빈 칸 (7의 배수로 맞춤)
+    const totalCells = firstWeekday + daysInMonth;
+    const remainingCells = (7 - (totalCells % 7)) % 7;
+    for (let i = 1; i <= remainingCells; i++) {
+      html += `<div class="calendar-day other-month"><div class="calendar-day-num">${i}</div></div>`;
+    }
+
+    document.getElementById('calendar-grid').innerHTML = html;
   }
 
-  function renderRecentLeave(data) {
-    const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
+  function renderRecentLeave() {
+    // 전체 연월차 데이터에서 최신순 10개
+    const sorted = [...leaveData].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
 
     if (sorted.length === 0) {
       document.getElementById('recent-leave').innerHTML = '<div class="no-data"><div class="icon">📭</div><div>최근 신청 없음</div></div>';

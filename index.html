@@ -1440,7 +1440,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v19
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v22
   </footer>
 </div>
 
@@ -1528,13 +1528,30 @@
       // 연월차 파싱 (A=휴가자, B=유형, C=날짜, D=비고)
       if (leaveText) {
         const parsedLeave = Papa.parse(leaveText, { header: false, skipEmptyLines: true });
-        leaveData = parsedLeave.data.slice(1).map(row => ({
+        const rawLeave = parsedLeave.data.slice(1).map(row => ({
           author: cleanAuthor(row[0]),
           type: String(row[1] || '').trim(),
           typeKey: getLeaveTypeKey(row[1]),
           date: cleanDate(row[2]),
           note: String(row[3] || '').trim()
         })).filter(r => r.date && r.author && r.typeKey);
+
+        // 비고에서 추가 일자 추출하여 확장
+        const expanded = [];
+        rawLeave.forEach(l => {
+          expandLeaveByNote(l).forEach(item => expanded.push(item));
+        });
+
+        // 중복 제거 (작성자|날짜|유형 키)
+        const seen = new Set();
+        leaveData = [];
+        expanded.forEach(l => {
+          const key = l.author + '|' + l.date + '|' + l.typeKey;
+          if (!seen.has(key)) {
+            seen.add(key);
+            leaveData.push(l);
+          }
+        });
       } else {
         leaveData = [];
       }
@@ -1558,6 +1575,101 @@
     if (s.includes('반차')) return 'half';
     if (s.includes('연차') || s.includes('휴가') || s.includes('월차')) return 'full';
     return null;
+  }
+
+  // 비고에서 추가 일자를 추출하여 다중 일자로 확장
+  // 케이스:
+  // ✅ 확장: "26,27,28,29" (콤마 일자), "2/19,2/20" (슬래시-콤마 일자)
+  // ❌ 안 함: 시간 키워드(시간/분/일찍/퇴근/조퇴/출근) 포함 시
+  function expandLeaveByNote(leaveItem) {
+    if (!leaveItem.note) return [leaveItem];
+    const note = leaveItem.note;
+
+    // 안전장치 1: 시간 관련 키워드 있으면 확장 안 함
+    // (시간 단위 사용은 별개 신청을 받아야 정확함)
+    if (/시간|\d+분|조퇴|일찍|퇴근|출근/.test(note)) {
+      return [leaveItem];
+    }
+
+    const baseDate = new Date(leaveItem.date);
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    const baseDay = baseDate.getDate();
+
+    // 패턴 우선순위 1: 슬래시 일자 "M/D" 2개 이상 (예: "2/19,2/20")
+    const slashDates = [];
+    const slashPattern = /(\d{1,2})\s*\/\s*(\d{1,2})/g;
+    let m;
+    while ((m = slashPattern.exec(note)) !== null) {
+      const mm = parseInt(m[1]);
+      const dd = parseInt(m[2]);
+      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+        slashDates.push({ month: mm, day: dd });
+      }
+    }
+    if (slashDates.length >= 2) {
+      // 모두 시트 날짜와 같은 달인지 확인
+      const sameMonth = slashDates.every(d => d.month === month + 1);
+      if (sameMonth) {
+        const days = slashDates.map(d => d.day);
+        const allDays = [...new Set([baseDay, ...days])].sort((a, b) => a - b);
+        return allDays.map(d => ({
+          ...leaveItem,
+          date: fmtDateISO(new Date(year, month, d)),
+          _expanded: d !== baseDay
+        }));
+      }
+      // 다른 달이 섞여 있으면 안전하게 확장 안 함
+      return [leaveItem];
+    }
+
+    // 패턴 2: 콤마 구분 일자 (예: "26,27,28,29")
+    // 단, 매칭 위치 앞뒤에 슬래시가 있으면 슬래시-콤마 형식이므로 위에서 처리됨
+    const commaMatch = note.match(/(\d{1,2})(?:\s*[,，]\s*\d{1,2}){1,}/);
+    if (commaMatch) {
+      const beforeChar = commaMatch.index > 0 ? note[commaMatch.index - 1] : '';
+      const afterIdx = commaMatch.index + commaMatch[0].length;
+      const afterChar = afterIdx < note.length ? note[afterIdx] : '';
+      // 슬래시 포함되면 무시
+      if (beforeChar !== '/' && afterChar !== '/' && !commaMatch[0].includes('/')) {
+        const days = commaMatch[0].split(/\s*[,，]\s*/).map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        if (days.length >= 2 && days.every(d => d >= 1 && d <= 31)) {
+          const allDays = [...new Set([baseDay, ...days])].sort((a, b) => a - b);
+          return allDays.map(d => ({
+            ...leaveItem,
+            date: fmtDateISO(new Date(year, month, d)),
+            _expanded: d !== baseDay
+          }));
+        }
+      }
+    }
+
+    // 패턴 3: 일자 범위 "D~D" 또는 "D-D"
+    // 시간 키워드는 위에서 이미 걸렸음. 슬래시 일자 범위도 위에서 처리됨.
+    const rangeMatch = note.match(/(\d{1,2})\s*[~\-–]\s*(\d{1,2})/);
+    if (rangeMatch) {
+      const idx = rangeMatch.index;
+      const endIdx = idx + rangeMatch[0].length;
+      const beforeChar = idx > 0 ? note[idx - 1] : '';
+      const afterChar = endIdx < note.length ? note[endIdx] : '';
+      // 슬래시 옆이면 무시 (M/D-M/D 같은 형식은 위 슬래시 패턴이 처리)
+      if (beforeChar !== '/' && afterChar !== '/') {
+        const start = parseInt(rangeMatch[1]);
+        const stop = parseInt(rangeMatch[2]);
+        if (start >= 1 && start <= 31 && stop >= start && stop <= 31 && stop - start <= 30) {
+          const days = [];
+          for (let d = start; d <= stop; d++) days.push(d);
+          const allDays = [...new Set([baseDay, ...days])].sort((a, b) => a - b);
+          return allDays.map(d => ({
+            ...leaveItem,
+            date: fmtDateISO(new Date(year, month, d)),
+            _expanded: d !== baseDay
+          }));
+        }
+      }
+    }
+
+    return [leaveItem];
   }
 
   function populateAuthorFilter() {
@@ -2420,7 +2532,9 @@
       const dayLeaves = leavesByDay[day] || [];
       const tagsHtml = dayLeaves.map(l => {
         const lbl = getTypeLabel(l.typeKey);
-        return `<div class="leave-tag ${l.typeKey}" title="${escapeHtml(l.author + ' · ' + l.type + (l.note ? ' (' + l.note + ')' : ''))}">${l.author}<span class="leave-tag-type"> ${lbl}</span></div>`;
+        const expandedMark = l._expanded ? '<span style="opacity:0.5; margin-left:2px;" title="비고에서 자동 확장">✱</span>' : '';
+        const tooltipText = l.author + ' · ' + l.type + (l.note ? ' (' + l.note + ')' : '') + (l._expanded ? ' [비고 자동 확장]' : '');
+        return `<div class="leave-tag ${l.typeKey}" title="${escapeHtml(tooltipText)}">${l.author}<span class="leave-tag-type"> ${lbl}</span>${expandedMark}</div>`;
       }).join('');
 
       html += `<div class="${cls}">

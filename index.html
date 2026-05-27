@@ -620,6 +620,13 @@
     color: var(--line);
     background: var(--paper);
   }
+  .matrix td.cell.holiday-cell {
+    background: #FFEEF0;
+    color: #B85556;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: -0.02em;
+  }
   .matrix td.cell.absent {
     background: var(--absent);
     color: var(--absent-text);
@@ -758,6 +765,29 @@
   .calendar-day.weekend { background: #F0EFEC; }
   .calendar-day.sunday .calendar-day-num { color: #B85556; }
   .calendar-day.saturday .calendar-day-num { color: #4A6FA5; }
+  .calendar-day.holiday {
+    background: #FFEEF0;
+  }
+  .calendar-day.holiday .calendar-day-num {
+    color: #B85556;
+  }
+  .calendar-day.holiday.weekend {
+    background: #FFEEF0;
+  }
+  .calendar-day-holiday {
+    font-size: 9px;
+    color: #B85556;
+    font-weight: 700;
+    background: rgba(184, 85, 86, 0.12);
+    padding: 1px 4px;
+    border-radius: 2px;
+    margin-bottom: 1px;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'Pretendard';
+  }
   .calendar-day.other-month {
     opacity: 0.35;
     background: var(--paper);
@@ -1363,6 +1393,7 @@
         <div><span class="swatch" style="background: #FFF4D6;"></span>종일연차</div>
         <div><span class="swatch" style="background: #FFE4C7;"></span>반차</div>
         <div><span class="swatch" style="background: #FFF0E0;"></span>반반차</div>
+        <div><span class="swatch" style="background: #FFEEF0;"></span>공휴일</div>
         <div><span class="swatch" style="background: var(--absent);"></span>마감된 평일 미보고</div>
         <div><span class="swatch" style="background: var(--paper); border: 1px solid var(--line);"></span>미마감 (오늘/미래)</div>
         <div><span class="swatch" style="background: #F0EFEC;"></span>주말</div>
@@ -1425,6 +1456,7 @@
         <div><span class="swatch" style="background: #FFF4D6;"></span>종일연차</div>
         <div><span class="swatch" style="background: #FFE4C7;"></span>반차</div>
         <div><span class="swatch" style="background: #FFF0E0;"></span>반반차</div>
+        <div><span class="swatch" style="background: #FFEEF0;"></span>공휴일</div>
         <div><span class="swatch" style="background: #F0EFEC;"></span>주말</div>
         <div><span class="swatch" style="background: rgba(184, 115, 51, 0.08); border: 2px solid var(--copper);"></span>오늘</div>
       </div>
@@ -1440,7 +1472,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v22
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v24
   </footer>
 </div>
 
@@ -1457,6 +1489,49 @@
   };
   const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)'];
   const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy' };
+
+  // 한국 공휴일 (2025-2026)
+  const HOLIDAYS = {
+    // 2025
+    '2025-01-01': '신정',
+    '2025-01-28': '설날 연휴',
+    '2025-01-29': '설날',
+    '2025-01-30': '설날 연휴',
+    '2025-03-01': '삼일절',
+    '2025-03-03': '대체공휴일',
+    '2025-05-05': '어린이날·부처님오신날',
+    '2025-05-06': '대체공휴일',
+    '2025-06-06': '현충일',
+    '2025-08-15': '광복절',
+    '2025-10-03': '개천절',
+    '2025-10-06': '추석 연휴',
+    '2025-10-07': '추석',
+    '2025-10-08': '추석 연휴',
+    '2025-10-09': '한글날',
+    '2025-12-25': '성탄절',
+    // 2026
+    '2026-01-01': '신정',
+    '2026-02-16': '설날 연휴',
+    '2026-02-17': '설날',
+    '2026-02-18': '설날 연휴',
+    '2026-03-01': '삼일절',
+    '2026-03-02': '대체공휴일',
+    '2026-05-05': '어린이날',
+    '2026-05-24': '부처님오신날',
+    '2026-05-25': '대체공휴일',
+    '2026-06-03': '지방선거',
+    '2026-06-06': '현충일',
+    '2026-08-15': '광복절',
+    '2026-08-17': '대체공휴일',
+    '2026-09-24': '추석 연휴',
+    '2026-09-25': '추석',
+    '2026-09-26': '추석 연휴',
+    '2026-09-28': '대체공휴일',
+    '2026-10-03': '개천절',
+    '2026-10-05': '대체공휴일',
+    '2026-10-09': '한글날',
+    '2026-12-25': '성탄절'
+  };
 
   let allReports = [];
   let leaveData = [];
@@ -1579,7 +1654,7 @@
 
   // 비고에서 추가 일자를 추출하여 다중 일자로 확장
   // 케이스:
-  // ✅ 확장: "26,27,28,29" (콤마 일자), "2/19,2/20" (슬래시-콤마 일자)
+  // ✅ 확장: "26,27,28,29" (콤마), "2/19,2/20" (슬래시-콤마), "19일 / 20일" (한글 슬래시), "26~29" (범위)
   // ❌ 안 함: 시간 키워드(시간/분/일찍/퇴근/조퇴/출근) 포함 시
   function expandLeaveByNote(leaveItem) {
     if (!leaveItem.note) return [leaveItem];
@@ -1621,6 +1696,26 @@
       }
       // 다른 달이 섞여 있으면 안전하게 확장 안 함
       return [leaveItem];
+    }
+
+    // 패턴 우선순위 2: 한글 슬래시 일자 "D일 / D일" (예: "19일 / 20일", "26일/27일")
+    const koreanSlashPattern = /(\d{1,2})\s*일\s*[\/／]\s*(\d{1,2})\s*일/g;
+    const koreanDaySet = new Set();
+    let km;
+    while ((km = koreanSlashPattern.exec(note)) !== null) {
+      const d1 = parseInt(km[1]);
+      const d2 = parseInt(km[2]);
+      if (d1 >= 1 && d1 <= 31) koreanDaySet.add(d1);
+      if (d2 >= 1 && d2 <= 31) koreanDaySet.add(d2);
+    }
+    if (koreanDaySet.size >= 2) {
+      const days = [...koreanDaySet];
+      const allDays = [...new Set([baseDay, ...days])].sort((a, b) => a - b);
+      return allDays.map(d => ({
+        ...leaveItem,
+        date: fmtDateISO(new Date(year, month, d)),
+        _expanded: d !== baseDay
+      }));
     }
 
     // 패턴 2: 콤마 구분 일자 (예: "26,27,28,29")
@@ -2068,6 +2163,8 @@
         const isPast = cellDate < todayStart;
         if (wd >= 1 && wd <= 5 && isPast) {
           const dateStr = fmtDateISO(d);
+          const isHoliday = !!HOLIDAYS[dateStr];
+          if (isHoliday) return; // 공휴일은 카운트 제외
           const leaves = leaveByKey[author + '|' + dateStr] || [];
           const hasFullLeave = leaves.includes('full');
           if (hasFullLeave) {
@@ -2139,6 +2236,8 @@
           html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반차">${cnt}+반차</td>`;
         } else if (cnt > 0) {
           html += `<td class="cell has">${cnt}</td>`;
+        } else if (HOLIDAYS[dateStr]) {
+          html += `<td class="cell holiday-cell" title="${escapeHtml(HOLIDAYS[dateStr])}">휴일</td>`;
         } else if (isWeekend) {
           html += `<td class="cell weekend">·</td>`;
         } else if (hasFullLeave) {
@@ -2520,11 +2619,15 @@
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(calendarYear, calendarMonth, day);
       const weekday = date.getDay();
+      const dateStr = fmtDateISO(date);
       const isWeekend = weekday === 0 || weekday === 6;
       const isToday = isCurrentMonth && today.getDate() === day;
+      const holidayName = HOLIDAYS[dateStr];
+      const isHoliday = !!holidayName;
 
       let cls = 'calendar-day';
       if (isWeekend) cls += ' weekend';
+      if (isHoliday) cls += ' holiday';
       if (isToday) cls += ' today';
       if (weekday === 0) cls += ' sunday';
       if (weekday === 6) cls += ' saturday';
@@ -2537,8 +2640,11 @@
         return `<div class="leave-tag ${l.typeKey}" title="${escapeHtml(tooltipText)}">${l.author}<span class="leave-tag-type"> ${lbl}</span>${expandedMark}</div>`;
       }).join('');
 
+      const holidayHtml = isHoliday ? `<div class="calendar-day-holiday" title="${escapeHtml(holidayName)}">${holidayName}</div>` : '';
+
       html += `<div class="${cls}">
         <div class="calendar-day-num">${day}</div>
+        ${holidayHtml}
         ${tagsHtml}
       </div>`;
     }

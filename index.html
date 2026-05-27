@@ -1472,7 +1472,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v24
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v25
   </footer>
 </div>
 
@@ -1699,6 +1699,7 @@
     }
 
     // 패턴 우선순위 2: 한글 슬래시 일자 "D일 / D일" (예: "19일 / 20일", "26일/27일")
+    // 단, baseDay가 매칭된 일자 중에 있어야 진짜 일자 표기로 인정 (예: "20일/4일"은 일수라 패스)
     const koreanSlashPattern = /(\d{1,2})\s*일\s*[\/／]\s*(\d{1,2})\s*일/g;
     const koreanDaySet = new Set();
     let km;
@@ -1708,7 +1709,7 @@
       if (d1 >= 1 && d1 <= 31) koreanDaySet.add(d1);
       if (d2 >= 1 && d2 <= 31) koreanDaySet.add(d2);
     }
-    if (koreanDaySet.size >= 2) {
+    if (koreanDaySet.size >= 2 && koreanDaySet.has(baseDay)) {
       const days = [...koreanDaySet];
       const allDays = [...new Set([baseDay, ...days])].sort((a, b) => a - b);
       return allDays.map(d => ({

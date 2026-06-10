@@ -1472,7 +1472,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v25
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v26
   </footer>
 </div>
 
@@ -1654,7 +1654,8 @@
 
   // 비고에서 추가 일자를 추출하여 다중 일자로 확장
   // 케이스:
-  // ✅ 확장: "26,27,28,29" (콤마), "2/19,2/20" (슬래시-콤마), "19일 / 20일" (한글 슬래시), "26~29" (범위)
+  // ✅ 확장: "26,27,28,29" (콤마), "2/19,2/20" (슬래시-콤마), "19일 / 20일" (한글 슬래시),
+  //         "26~29" / "8일~12일" (범위), "~12일" (종료일만)
   // ❌ 안 함: 시간 키워드(시간/분/일찍/퇴근/조퇴/출근) 포함 시
   function expandLeaveByNote(leaveItem) {
     if (!leaveItem.note) return [leaveItem];
@@ -1740,9 +1741,8 @@
       }
     }
 
-    // 패턴 3: 일자 범위 "D~D" 또는 "D-D"
-    // 시간 키워드는 위에서 이미 걸렸음. 슬래시 일자 범위도 위에서 처리됨.
-    const rangeMatch = note.match(/(\d{1,2})\s*[~\-–]\s*(\d{1,2})/);
+    // 패턴 3: 일자 범위 "D~D", "D일~D일" 등 (시간 키워드는 위에서 걸러짐)
+    const rangeMatch = note.match(/(\d{1,2})\s*일?\s*[~\-–]\s*(\d{1,2})\s*일?/);
     if (rangeMatch) {
       const idx = rangeMatch.index;
       const endIdx = idx + rangeMatch[0].length;
@@ -1762,6 +1762,22 @@
             _expanded: d !== baseDay
           }));
         }
+      }
+    }
+
+    // 패턴 4: "~D일" 종료일 표기 (앞에 숫자 없음)
+    // baseDay부터 endDay까지 확장. 예: 비고 "~12일 출산휴가" + baseDay=8 → 8~12일
+    const tildeEndMatch = note.match(/(?:^|[^\d])[~∼〜～]\s*(\d{1,2})\s*일/);
+    if (tildeEndMatch) {
+      const endDay = parseInt(tildeEndMatch[1]);
+      if (endDay >= 1 && endDay <= 31 && endDay > baseDay && endDay - baseDay <= 30) {
+        const days = [];
+        for (let d = baseDay; d <= endDay; d++) days.push(d);
+        return days.map(d => ({
+          ...leaveItem,
+          date: fmtDateISO(new Date(year, month, d)),
+          _expanded: d !== baseDay
+        }));
       }
     }
 

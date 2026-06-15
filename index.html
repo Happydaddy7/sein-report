@@ -659,6 +659,13 @@
     font-size: 9px;
     letter-spacing: -0.02em;
   }
+  .matrix td.cell.leave-maternity {
+    background: #FCE7F3;
+    color: #9D174D;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: -0.02em;
+  }
   .matrix td.cell.has-with-leave {
     background: linear-gradient(135deg, var(--ivory) 50%, #FFE4C7 50%);
     color: var(--navy);
@@ -827,6 +834,11 @@
     background: #FFF0E0;
     color: #B07840;
     border-left: 3px solid #E0B080;
+  }
+  .leave-tag.maternity {
+    background: #FCE7F3;
+    color: #9D174D;
+    border-left: 3px solid #DB2777;
   }
   .leave-tag .leave-tag-type {
     font-size: 9px;
@@ -1393,6 +1405,7 @@
         <div><span class="swatch" style="background: #FFF4D6;"></span>종일연차</div>
         <div><span class="swatch" style="background: #FFE4C7;"></span>반차</div>
         <div><span class="swatch" style="background: #FFF0E0;"></span>반반차</div>
+        <div><span class="swatch" style="background: #FCE7F3;"></span>출산휴가</div>
         <div><span class="swatch" style="background: #FFEEF0;"></span>공휴일</div>
         <div><span class="swatch" style="background: var(--absent);"></span>마감된 평일 미보고</div>
         <div><span class="swatch" style="background: var(--paper); border: 1px solid var(--line);"></span>미마감 (오늘/미래)</div>
@@ -1456,6 +1469,7 @@
         <div><span class="swatch" style="background: #FFF4D6;"></span>종일연차</div>
         <div><span class="swatch" style="background: #FFE4C7;"></span>반차</div>
         <div><span class="swatch" style="background: #FFF0E0;"></span>반반차</div>
+        <div><span class="swatch" style="background: #FCE7F3;"></span>출산휴가</div>
         <div><span class="swatch" style="background: #FFEEF0;"></span>공휴일</div>
         <div><span class="swatch" style="background: #F0EFEC;"></span>주말</div>
         <div><span class="swatch" style="background: rgba(184, 115, 51, 0.08); border: 2px solid var(--copper);"></span>오늘</div>
@@ -1472,7 +1486,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v26
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v27
   </footer>
 </div>
 
@@ -1606,7 +1620,7 @@
         const rawLeave = parsedLeave.data.slice(1).map(row => ({
           author: cleanAuthor(row[0]),
           type: String(row[1] || '').trim(),
-          typeKey: getLeaveTypeKey(row[1]),
+          typeKey: getLeaveTypeKey(row[1], row[3]),
           date: cleanDate(row[2]),
           note: String(row[3] || '').trim()
         })).filter(r => r.date && r.author && r.typeKey);
@@ -1642,10 +1656,13 @@
     }
   }
 
-  // 연차 유형 키 추출
-  function getLeaveTypeKey(typeStr) {
+  // 연차 유형 키 추출 (비고도 같이 봐서 출산휴가 분리)
+  function getLeaveTypeKey(typeStr, noteStr) {
     if (!typeStr) return null;
     const s = String(typeStr).trim();
+    const note = String(noteStr || '').trim();
+    // 비고에 "출산" 키워드가 있으면 출산휴가로 분류 (일반 연차와 별개)
+    if (note.includes('출산')) return 'maternity';
     if (s.includes('반반차')) return 'quarter';
     if (s.includes('반차')) return 'half';
     if (s.includes('연차') || s.includes('휴가') || s.includes('월차')) return 'full';
@@ -2184,7 +2201,8 @@
           if (isHoliday) return; // 공휴일은 카운트 제외
           const leaves = leaveByKey[author + '|' + dateStr] || [];
           const hasFullLeave = leaves.includes('full');
-          if (hasFullLeave) {
+          const hasMaternity = leaves.includes('maternity');
+          if (hasFullLeave || hasMaternity) {
             leaveSlots++;
           } else {
             totalSlots++;
@@ -2243,6 +2261,7 @@
         const hasFullLeave = leaves.includes('full');
         const hasHalfLeave = leaves.includes('half');
         const hasQuarterLeave = leaves.includes('quarter');
+        const hasMaternity = leaves.includes('maternity');
         total += cnt;
         
         if (cnt > 0 && hasQuarterLeave) {
@@ -2257,6 +2276,8 @@
           html += `<td class="cell holiday-cell" title="${escapeHtml(HOLIDAYS[dateStr])}">휴일</td>`;
         } else if (isWeekend) {
           html += `<td class="cell weekend">·</td>`;
+        } else if (hasMaternity) {
+          html += `<td class="cell leave-maternity" title="출산휴가">출산</td>`;
         } else if (hasFullLeave) {
           html += `<td class="cell leave-full" title="종일연차">연차</td>`;
         } else if (hasHalfLeave) {
@@ -2529,6 +2550,7 @@
     if (typeKey === 'full') return 1.0;
     if (typeKey === 'half') return 0.5;
     if (typeKey === 'quarter') return 0.25;
+    // maternity는 일반 연차 카운트에서 제외 (별도 항목)
     return 0;
   }
 
@@ -2540,6 +2562,7 @@
     if (typeKey === 'full') return '연차';
     if (typeKey === 'half') return '반차';
     if (typeKey === 'quarter') return '반반차';
+    if (typeKey === 'maternity') return '출산';
     return '';
   }
 

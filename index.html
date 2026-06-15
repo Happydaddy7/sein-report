@@ -666,6 +666,101 @@
     font-size: 10px;
     letter-spacing: -0.02em;
   }
+
+  /* MATERNITY STATUS CARDS */
+  .maternity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+  }
+  .maternity-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-left: 4px solid #DB2777;
+    border-radius: 6px;
+    padding: 16px 18px;
+  }
+  .maternity-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  .maternity-card-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.2;
+  }
+  .maternity-card-dept {
+    display: inline-block;
+    font-size: 10px;
+    color: #9D174D;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    background: #FCE7F3;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 4px;
+  }
+  .maternity-card-stat {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .maternity-card-used {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: #9D174D;
+    line-height: 1;
+  }
+  .maternity-card-used .total {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-left: 2px;
+  }
+  .maternity-card-remain {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 4px;
+  }
+  .maternity-card-remain strong {
+    color: var(--copper);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .maternity-bar {
+    height: 8px;
+    background: var(--ivory);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .maternity-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FCE7F3 0%, #DB2777 100%);
+    border-radius: 4px;
+    transition: width 0.4s;
+  }
+  .maternity-card-dates {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+  .maternity-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 13px;
+  }
   .matrix td.cell.has-with-leave {
     background: linear-gradient(135deg, var(--ivory) 50%, #FFE4C7 50%);
     color: var(--navy);
@@ -1476,6 +1571,11 @@
       </div>
 
       <section class="section" style="margin-top: 32px;">
+        <h2 class="section-title">출산휴가 사용 현황 <span class="count" id="maternity-count"></span></h2>
+        <div class="maternity-grid" id="maternity-grid"></div>
+      </section>
+
+      <section class="section" style="margin-top: 32px;">
         <h2 class="section-title">월별 × 인원별 매트릭스 <span class="count" id="leave-matrix-year"></span></h2>
         <div class="matrix-wrap">
           <table class="matrix" id="leave-matrix"></table>
@@ -1486,7 +1586,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v27
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v29
   </footer>
 </div>
 
@@ -1661,12 +1761,20 @@
     if (!typeStr) return null;
     const s = String(typeStr).trim();
     const note = String(noteStr || '').trim();
-    // 비고에 "출산" 키워드가 있으면 출산휴가로 분류 (일반 연차와 별개)
-    if (note.includes('출산')) return 'maternity';
+    // 비고에 출산/조리원/산휴 등 키워드 있으면 출산휴가로 분류
+    if (/출산|조리원|산휴|출산전후/.test(note)) return 'maternity';
     if (s.includes('반반차')) return 'quarter';
     if (s.includes('반차')) return 'half';
     if (s.includes('연차') || s.includes('휴가') || s.includes('월차')) return 'full';
     return null;
+  }
+
+  // 출산휴가일 때 실제 사용 일수 계산 (원래 휴가 유형 기반)
+  function getMaternityDays(item) {
+    const s = String(item.type || '').trim();
+    if (s.includes('반반차')) return 0.25;
+    if (s.includes('반차')) return 0.5;
+    return 1.0;
   }
 
   // 비고에서 추가 일자를 추출하여 다중 일자로 확장
@@ -2608,7 +2716,63 @@
     document.getElementById('leave-matrix-year').textContent = `// ${calendarYear}년`;
 
     renderCalendar(monthData);
+    renderMaternityStatus();
     renderLeaveMatrix(yearData);
+  }
+
+  // 출산휴가 사용 현황 (전체 누적, 20일 부여 기준)
+  function renderMaternityStatus() {
+    const TOTAL_DAYS = 20;
+    const byAuthor = {};
+    leaveData.forEach(l => {
+      if (l.typeKey === 'maternity') {
+        if (!byAuthor[l.author]) byAuthor[l.author] = { days: 0, dates: [] };
+        byAuthor[l.author].days += getMaternityDays(l);
+        byAuthor[l.author].dates.push(l.date);
+      }
+    });
+
+    const authors = Object.keys(byAuthor).sort((a, b) => byAuthor[b].days - byAuthor[a].days);
+
+    if (authors.length === 0) {
+      document.getElementById('maternity-grid').innerHTML = '<div class="maternity-empty">출산휴가 사용 중인 인원이 없습니다.</div>';
+      document.getElementById('maternity-count').textContent = '';
+      return;
+    }
+
+    const html = authors.map(author => {
+      const data = byAuthor[author];
+      const used = data.days;
+      const remain = Math.max(0, TOTAL_DAYS - used);
+      const pct = Math.min(100, (used / TOTAL_DAYS) * 100);
+      const dept = DEPT_MAP[author] || '기타';
+      const dates = data.dates.sort();
+      const firstDate = dates[0];
+      const lastDate = dates[dates.length - 1];
+      const dateRange = firstDate === lastDate ? firstDate : `${firstDate} ~ ${lastDate}`;
+
+      return `
+        <div class="maternity-card">
+          <div class="maternity-card-header">
+            <div>
+              <div class="maternity-card-name">${author}</div>
+              <div class="maternity-card-dept">${dept}</div>
+            </div>
+            <div class="maternity-card-stat">
+              <div class="maternity-card-used">${fmtDays(used)}<span class="total">/${TOTAL_DAYS}일</span></div>
+              <div class="maternity-card-remain">잔여 <strong>${fmtDays(remain)}일</strong></div>
+            </div>
+          </div>
+          <div class="maternity-bar">
+            <div class="maternity-bar-fill" style="width: ${pct}%"></div>
+          </div>
+          <div class="maternity-card-dates">${dateRange}</div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('maternity-grid').innerHTML = html;
+    document.getElementById('maternity-count').textContent = `// ${authors.length}명 · ${TOTAL_DAYS}일 부여`;
   }
 
   function renderCalendar(monthData) {

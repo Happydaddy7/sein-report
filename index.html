@@ -667,99 +667,118 @@
     letter-spacing: -0.02em;
   }
 
-  /* MATERNITY STATUS CARDS */
-  .maternity-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 12px;
+  /* MATERNITY STATUS (compact, bottom) */
+  .section-title-mini {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
   }
-  .maternity-card {
+  .section-title-mini .count {
+    font-size: 10px;
+    color: #9D174D;
+    font-weight: 600;
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .maternity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .maternity-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 160px) 70px 1fr 70px minmax(150px, auto);
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
     background: white;
     border: 1px solid var(--line);
-    border-left: 4px solid #DB2777;
-    border-radius: 6px;
-    padding: 16px 18px;
+    border-left: 3px solid #DB2777;
+    border-radius: 4px;
+    font-size: 12px;
   }
-  .maternity-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-    gap: 12px;
-  }
-  .maternity-card-name {
-    font-family: 'Noto Serif KR', serif;
-    font-size: 16px;
+  .maternity-row-name {
     font-weight: 700;
     color: var(--navy);
-    line-height: 1.2;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
   }
-  .maternity-card-dept {
+  .maternity-row-name .dept {
     display: inline-block;
-    font-size: 10px;
+    font-size: 9px;
     color: #9D174D;
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
     background: #FCE7F3;
-    padding: 2px 6px;
-    border-radius: 3px;
-    margin-top: 4px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    vertical-align: middle;
+    font-weight: 600;
   }
-  .maternity-card-stat {
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .maternity-card-used {
+  .maternity-row-used {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 24px;
     font-weight: 700;
     color: #9D174D;
-    line-height: 1;
-  }
-  .maternity-card-used .total {
     font-size: 13px;
+    text-align: right;
+  }
+  .maternity-row-used .total {
+    font-size: 10px;
     color: var(--muted);
     font-weight: 500;
-    margin-left: 2px;
   }
-  .maternity-card-remain {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    margin-top: 4px;
-  }
-  .maternity-card-remain strong {
-    color: var(--copper);
-    font-weight: 700;
-    font-size: 13px;
-  }
-  .maternity-bar {
-    height: 8px;
+  .maternity-row-bar {
+    height: 6px;
     background: var(--ivory);
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
-    margin-bottom: 8px;
   }
-  .maternity-bar-fill {
+  .maternity-row-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #FCE7F3 0%, #DB2777 100%);
-    border-radius: 4px;
+    border-radius: 3px;
     transition: width 0.4s;
   }
-  .maternity-card-dates {
+  .maternity-row-remain {
     font-size: 10px;
     color: var(--muted);
     font-family: 'JetBrains Mono', monospace;
-    letter-spacing: 0.02em;
+    text-align: right;
+  }
+  .maternity-row-remain strong {
+    color: var(--copper);
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .maternity-row-dates {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
   }
   .maternity-empty {
-    padding: 32px;
+    padding: 12px;
     text-align: center;
     color: var(--muted);
     background: white;
     border: 1px solid var(--line);
-    border-radius: 6px;
-    font-size: 13px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  @media (max-width: 700px) {
+    .maternity-row {
+      grid-template-columns: 1fr auto;
+      gap: 6px 10px;
+    }
+    .maternity-row-bar { grid-column: 1 / -1; }
+    .maternity-row-dates { grid-column: 1 / -1; text-align: left; }
   }
   .matrix td.cell.has-with-leave {
     background: linear-gradient(135deg, var(--ivory) 50%, #FFE4C7 50%);
@@ -1571,22 +1590,22 @@
       </div>
 
       <section class="section" style="margin-top: 32px;">
-        <h2 class="section-title">출산휴가 사용 현황 <span class="count" id="maternity-count"></span></h2>
-        <div class="maternity-grid" id="maternity-grid"></div>
-      </section>
-
-      <section class="section" style="margin-top: 32px;">
         <h2 class="section-title">월별 × 인원별 매트릭스 <span class="count" id="leave-matrix-year"></span></h2>
         <div class="matrix-wrap">
           <table class="matrix" id="leave-matrix"></table>
         </div>
+      </section>
+
+      <section class="section maternity-section" style="margin-top: 24px;">
+        <h2 class="section-title-mini">출산휴가 사용 현황 <span class="count" id="maternity-count"></span></h2>
+        <div class="maternity-list" id="maternity-grid"></div>
       </section>
     </div>
 
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v29
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v30
   </footer>
 </div>
 
@@ -2716,8 +2735,8 @@
     document.getElementById('leave-matrix-year').textContent = `// ${calendarYear}년`;
 
     renderCalendar(monthData);
-    renderMaternityStatus();
     renderLeaveMatrix(yearData);
+    renderMaternityStatus();
   }
 
   // 출산휴가 사용 현황 (전체 누적, 20일 부여 기준)
@@ -2752,21 +2771,12 @@
       const dateRange = firstDate === lastDate ? firstDate : `${firstDate} ~ ${lastDate}`;
 
       return `
-        <div class="maternity-card">
-          <div class="maternity-card-header">
-            <div>
-              <div class="maternity-card-name">${author}</div>
-              <div class="maternity-card-dept">${dept}</div>
-            </div>
-            <div class="maternity-card-stat">
-              <div class="maternity-card-used">${fmtDays(used)}<span class="total">/${TOTAL_DAYS}일</span></div>
-              <div class="maternity-card-remain">잔여 <strong>${fmtDays(remain)}일</strong></div>
-            </div>
-          </div>
-          <div class="maternity-bar">
-            <div class="maternity-bar-fill" style="width: ${pct}%"></div>
-          </div>
-          <div class="maternity-card-dates">${dateRange}</div>
+        <div class="maternity-row">
+          <div class="maternity-row-name">${author}<span class="dept">${dept}</span></div>
+          <div class="maternity-row-used">${fmtDays(used)}<span class="total">/${TOTAL_DAYS}일</span></div>
+          <div class="maternity-row-bar"><div class="maternity-row-bar-fill" style="width: ${pct}%"></div></div>
+          <div class="maternity-row-remain">잔여 <strong>${fmtDays(remain)}일</strong></div>
+          <div class="maternity-row-dates">${dateRange}</div>
         </div>
       `;
     }).join('');

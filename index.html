@@ -1605,7 +1605,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v30
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v31
   </footer>
 </div>
 
@@ -1798,8 +1798,8 @@
 
   // 비고에서 추가 일자를 추출하여 다중 일자로 확장
   // 케이스:
-  // ✅ 확장: "26,27,28,29" (콤마), "2/19,2/20" (슬래시-콤마), "19일 / 20일" (한글 슬래시),
-  //         "26~29" / "8일~12일" (범위), "~12일" (종료일만)
+  // ✅ 확장: "6월 25,26 7월 1,2,3" (한글 월), "26,27,28,29" (콤마), "2/19,2/20" (슬래시-콤마),
+  //         "19일 / 20일" (한글 슬래시), "26~29" / "8일~12일" (범위), "~12일" (종료일만)
   // ❌ 안 함: 시간 키워드(시간/분/일찍/퇴근/조퇴/출근) 포함 시
   function expandLeaveByNote(leaveItem) {
     if (!leaveItem.note) return [leaveItem];
@@ -1815,6 +1815,47 @@
     const year = baseDate.getFullYear();
     const month = baseDate.getMonth();
     const baseDay = baseDate.getDate();
+    const baseMonth = month + 1; // 0-indexed → 1-indexed
+
+    // 패턴 우선순위 0 (최우선): 한글 월 표기 "M월 D,D,D 7월 D,D,D"
+    // 예: "출산휴가 6월 25,26,29,30 7월 1,2,3,6,9,7,9,10,14,15,16"
+    // baseDay가 어느 월 그룹에 포함되어야 진짜 일자 표기로 인정 (오인식 방지)
+    const monthGroups = [];
+    const monthGroupRegex = /(\d{1,2})\s*월\s*([\d\s,]+?)(?=\s*\d+\s*월|$|[^\d,\s])/g;
+    let mg;
+    while ((mg = monthGroupRegex.exec(note)) !== null) {
+      const targetMonth = parseInt(mg[1]);
+      if (targetMonth >= 1 && targetMonth <= 12) {
+        const dayList = mg[2].match(/\d+/g);
+        if (dayList) {
+          const days = [...new Set(dayList.map(d => parseInt(d)).filter(d => d >= 1 && d <= 31))];
+          if (days.length > 0) monthGroups.push({ month: targetMonth, days });
+        }
+      }
+    }
+    // baseDay가 해당 월 그룹에 포함되어야 진짜 일자 표기로 인정
+    const baseGroup = monthGroups.find(g => g.month === baseMonth && g.days.includes(baseDay));
+    if (monthGroups.length >= 2 && baseGroup) {
+      const results = [];
+      const seenKeys = new Set();
+      monthGroups.forEach(g => {
+        const targetMonthIdx = g.month - 1;
+        // 연도 보정: 시트 월보다 작으면 다음 해 (12월 → 1월 등)
+        const targetYear = (targetMonthIdx < month) ? year + 1 : year;
+        g.days.forEach(d => {
+          const key = `${targetYear}-${targetMonthIdx}-${d}`;
+          if (seenKeys.has(key)) return;
+          seenKeys.add(key);
+          const dateObj = new Date(targetYear, targetMonthIdx, d);
+          results.push({
+            ...leaveItem,
+            date: fmtDateISO(dateObj),
+            _expanded: !(g.month === baseMonth && d === baseDay)
+          });
+        });
+      });
+      return results;
+    }
 
     // 패턴 우선순위 1: 슬래시 일자 "M/D" 2개 이상 (예: "2/19,2/20")
     const slashDates = [];

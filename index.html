@@ -28,6 +28,7 @@
     --line: #E5DCC9;
     --green: #4A7C59;
     --amber: #D4A547;
+    --teal: #2E7D8A;
     --highlight: #FFEAA7;
     --absent: #F5D5D5;
     --absent-text: #C4595A;
@@ -427,6 +428,7 @@
   .author-card.trade { border-left-color: var(--copper); }
   .author-card.finance { border-left-color: var(--green); }
   .author-card.strategy { border-left-color: var(--amber); }
+  .author-card.bs { border-left-color: var(--teal); }
   .author-card-head {
     padding: 14px 18px;
     background: var(--ivory);
@@ -1040,6 +1042,7 @@
   .recent-leave-item.trade { border-left-color: var(--copper); }
   .recent-leave-item.finance { border-left-color: var(--green); }
   .recent-leave-item.strategy { border-left-color: var(--amber); }
+  .recent-leave-item.bs { border-left-color: var(--teal); }
   .recent-leave-meta {
     display: flex;
     gap: 12px;
@@ -1109,6 +1112,37 @@
     color: var(--copper);
     font-family: 'JetBrains Mono', monospace;
     border-left: 2px solid var(--copper);
+  }
+  /* 부여·사용·잔여 3컬럼 차별화 */
+  .matrix th.col-granted, .matrix th.col-used, .matrix th.col-remain {
+    font-family: inherit;
+  }
+  .matrix th.col-remain { background: var(--navy-light); }
+  .matrix td.col-granted {
+    font-family: 'JetBrains Mono', monospace;
+    background: #F0EFEC;
+    color: #9A8F7E;
+    font-weight: 600;
+    font-size: 12px;
+    border-left: 2px solid var(--copper);
+  }
+  .matrix td.col-used {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--ivory);
+    color: var(--copper);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .matrix td.col-remain {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(15, 46, 76, 0.06);
+    color: var(--navy);
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .matrix td.col-remain.low {
+    background: rgba(178, 34, 34, 0.10);
+    color: #B22222;
   }
   .matrix tr.total-row {
     background: var(--navy);
@@ -1266,6 +1300,7 @@
   .dept-card.trade { border-top-color: var(--copper); }
   .dept-card.finance { border-top-color: var(--green); }
   .dept-card.strategy { border-top-color: var(--amber); }
+  .dept-card.bs { border-top-color: var(--teal); }
   .dept-card .dept-head {
     display: flex;
     justify-content: space-between;
@@ -1605,7 +1640,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v33
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v36
   </footer>
 </div>
 
@@ -1618,12 +1653,14 @@
     '정인상': '영업', '이충선': '영업',
     '왕려원': '무역', '성유진': '무역', '김선이': '무역',
     '류미화': '관리', '황유나': '관리', '박혜련': '관리',
-    '이병준': '경영지원(기획)'
+    '이병준': '경영지원(기획)',
+    '박동근': '비에스', '송영근': '비에스', '여선구': '비에스'
   };
-  const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)'];
-  const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy' };
+  const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)', '비에스'];
+  const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy', '비에스': 'bs' };
 
   // 개인별 연차 부여일수 (2026-01-01 기준 · 연차사용대장)
+  // ※ 여선구(비에스)는 부여일수 미정 → 부여·잔여 '·' 표시
   const LEAVE_GRANTED = {
     '이재석': 25.0, '류미화': 24.0, '김선이': 20.0, '왕려원': 17.0,
     '이복진': 17.0, '박제영': 16.0, '박동근': 16.0, '성유진': 15.0,
@@ -2973,7 +3010,7 @@
       else if (isThisMonth) thStyle = ' style="background: var(--navy-light);"';
       html += `<th${thStyle}><span class="day">${m + 1}월</span></th>`;
     }
-    html += '<th>사용</th><th>부여</th><th>잔여</th></tr></thead><tbody>';
+    html += '<th class="col-granted">부여</th><th class="col-used">사용</th><th class="col-remain">잔여</th></tr></thead><tbody>';
 
     sortedAuthors.forEach(author => {
       const dept = DEPT_MAP[author];
@@ -2990,9 +3027,10 @@
       }
       const granted = LEAVE_GRANTED[author];
       const remain = (granted != null) ? Math.max(0, granted - total) : null;
-      html += `<td class="total">${fmtDays(total)}</td>`;
-      html += `<td class="cell">${granted != null ? fmtDays(granted) : '·'}</td>`;
-      html += `<td class="total"${remain != null && remain <= 3 ? ' style="color:#B22222;"' : ''}>${remain != null ? fmtDays(remain) : '·'}</td></tr>`;
+      const lowRemain = remain != null && remain <= 3;
+      html += `<td class="col-granted">${granted != null ? fmtDays(granted) : '·'}</td>`;
+      html += `<td class="col-used">${fmtDays(total)}</td>`;
+      html += `<td class="col-remain${lowRemain ? ' low' : ''}">${remain != null ? fmtDays(remain) : '·'}</td></tr>`;
     });
 
     // 월별 합계 행
@@ -3004,8 +3042,6 @@
       grandTotal += monthSum;
       html += `<td class="cell">${monthSum > 0 ? fmtDays(monthSum) : '·'}</td>`;
     }
-    html += `<td class="total" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td>`;
-    // 부여/잔여 총계
     let grantedTotal = 0, remainTotal = 0;
     sortedAuthors.forEach(a => {
       const g = LEAVE_GRANTED[a];
@@ -3014,8 +3050,9 @@
         remainTotal += Math.max(0, g - totals[a]);
       }
     });
-    html += `<td class="total">${fmtDays(grantedTotal)}</td>`;
-    html += `<td class="total" style="background: var(--navy); color: white;">${fmtDays(remainTotal)}</td></tr>`;
+    html += `<td class="col-granted">${fmtDays(grantedTotal)}</td>`;
+    html += `<td class="col-used" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td>`;
+    html += `<td class="col-remain" style="background: var(--navy); color: white;">${fmtDays(remainTotal)}</td></tr>`;
     html += '</tbody>';
 
     document.getElementById('leave-matrix').innerHTML = html;

@@ -1605,7 +1605,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v32
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v33
   </footer>
 </div>
 
@@ -1757,6 +1757,17 @@
         rawLeave.forEach(l => {
           expandLeaveByNote(l).forEach(item => expanded.push(item));
         });
+
+        // 날짜 수동 보정 (본인 정정 반영): 이복진 출산휴가 7/7 → 7/8 (총일수 유지)
+        const bokjinHas78 = expanded.some(item =>
+          item.author === '이복진' && item.typeKey === 'maternity' && item.date === '2026-07-08');
+        if (!bokjinHas78) {
+          expanded.forEach(item => {
+            if (item.author === '이복진' && item.typeKey === 'maternity' && item.date === '2026-07-07') {
+              item.date = '2026-07-08';
+            }
+          });
+        }
 
         // 중복 제거 (작성자|날짜|유형 키)
         const seen = new Set();

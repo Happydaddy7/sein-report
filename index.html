@@ -1605,7 +1605,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v31
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v32
   </footer>
 </div>
 
@@ -1622,6 +1622,14 @@
   };
   const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)'];
   const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy' };
+
+  // 개인별 연차 부여일수 (2026-01-01 기준 · 연차사용대장)
+  const LEAVE_GRANTED = {
+    '이재석': 25.0, '류미화': 24.0, '김선이': 20.0, '왕려원': 17.0,
+    '이복진': 17.0, '박제영': 16.0, '박동근': 16.0, '성유진': 15.0,
+    '김휘동': 15.0, '정인상': 15.0, '송영근': 15.0, '황유나': 15.5,
+    '박혜련': 15.5, '이병준': 13.5, '이충선': 11.0
+  };
 
   // 한국 공휴일 (2025-2026)
   const HOLIDAYS = {
@@ -2954,7 +2962,7 @@
       else if (isThisMonth) thStyle = ' style="background: var(--navy-light);"';
       html += `<th${thStyle}><span class="day">${m + 1}월</span></th>`;
     }
-    html += '<th>합계</th></tr></thead><tbody>';
+    html += '<th>사용</th><th>부여</th><th>잔여</th></tr></thead><tbody>';
 
     sortedAuthors.forEach(author => {
       const dept = DEPT_MAP[author];
@@ -2969,7 +2977,11 @@
           html += `<td class="cell empty">·</td>`;
         }
       }
-      html += `<td class="total">${fmtDays(total)}</td></tr>`;
+      const granted = LEAVE_GRANTED[author];
+      const remain = (granted != null) ? Math.max(0, granted - total) : null;
+      html += `<td class="total">${fmtDays(total)}</td>`;
+      html += `<td class="cell">${granted != null ? fmtDays(granted) : '·'}</td>`;
+      html += `<td class="total"${remain != null && remain <= 3 ? ' style="color:#B22222;"' : ''}>${remain != null ? fmtDays(remain) : '·'}</td></tr>`;
     });
 
     // 월별 합계 행
@@ -2981,7 +2993,18 @@
       grandTotal += monthSum;
       html += `<td class="cell">${monthSum > 0 ? fmtDays(monthSum) : '·'}</td>`;
     }
-    html += `<td class="total" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td></tr>`;
+    html += `<td class="total" style="background: var(--copper); color: white;">${fmtDays(grandTotal)}</td>`;
+    // 부여/잔여 총계
+    let grantedTotal = 0, remainTotal = 0;
+    sortedAuthors.forEach(a => {
+      const g = LEAVE_GRANTED[a];
+      if (g != null) {
+        grantedTotal += g;
+        remainTotal += Math.max(0, g - totals[a]);
+      }
+    });
+    html += `<td class="total">${fmtDays(grantedTotal)}</td>`;
+    html += `<td class="total" style="background: var(--navy); color: white;">${fmtDays(remainTotal)}</td></tr>`;
     html += '</tbody>';
 
     document.getElementById('leave-matrix').innerHTML = html;

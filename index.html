@@ -661,6 +661,14 @@
     font-size: 9px;
     letter-spacing: -0.02em;
   }
+  .matrix td.cell .ampm {
+    display: block;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
   .matrix td.cell.leave-maternity {
     background: #FCE7F3;
     color: #9D174D;
@@ -1143,6 +1151,11 @@
   .matrix td.col-remain.low {
     background: rgba(178, 34, 34, 0.10);
     color: #B22222;
+  }
+  .matrix td.col-remain.over {
+    background: rgba(178, 34, 34, 0.20);
+    color: #B22222;
+    font-weight: 800;
   }
   .matrix tr.total-row {
     background: var(--navy);
@@ -1640,7 +1653,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v37
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v40
   </footer>
 </div>
 
@@ -1653,11 +1666,11 @@
     '정인상': '영업', '이충선': '영업',
     '왕려원': '무역', '성유진': '무역', '김선이': '무역',
     '류미화': '관리', '황유나': '관리', '박혜련': '관리',
-    '이병준': '경영지원(기획)',
+    '이병준': 'AI혁신팀',
     '박동근': '비에스', '송영근': '비에스', '여선구': '비에스'
   };
-  const DEPT_ORDER = ['영업', '무역', '관리', '경영지원(기획)', '비에스'];
-  const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', '경영지원(기획)': 'strategy', '비에스': 'bs' };
+  const DEPT_ORDER = ['영업', '무역', '관리', 'AI혁신팀', '비에스'];
+  const DEPT_CLASS = { '영업': '', '무역': 'trade', '관리': 'finance', 'AI혁신팀': 'strategy', '비에스': 'bs' };
 
   // 개인별 연차 부여일수 (2026-01-01 기준 · 연차사용대장)
   const LEAVE_GRANTED = {
@@ -1828,6 +1841,14 @@
     } catch (e) {
       onDataError(e.message);
     }
+  }
+
+  // 반차·반반차의 오전/오후 구분 추출 ('오전'|'오후'|'')
+  function getAmPm(typeStr) {
+    const s = String(typeStr || '');
+    if (s.includes('오전')) return '오전';
+    if (s.includes('오후')) return '오후';
+    return '';
   }
 
   // 연차 유형 키 추출 (비고도 같이 봐서 출산휴가 분리)
@@ -2386,12 +2407,18 @@
 
     // 연차 매핑 (기간 내만)
     const leaveByKey = {};
+    const ampmByKey = {};
     leaveData.forEach(l => {
       const ld = new Date(l.date);
       if (ld >= start && ld <= end) {
         const key = l.author + '|' + l.date;
         if (!leaveByKey[key]) leaveByKey[key] = [];
         leaveByKey[key].push(l.typeKey);
+        // 반차·반반차의 오전/오후 저장
+        if (l.typeKey === 'half' || l.typeKey === 'quarter') {
+          const ap = getAmPm(l.type);
+          if (ap) ampmByKey[key] = ap;
+        }
       }
     });
 
@@ -2489,10 +2516,12 @@
         
         if (cnt > 0 && hasQuarterLeave) {
           // 보고함 + 반반차
-          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반반차">${cnt}+반반차</td>`;
+          const ap = ampmByKey[author + '|' + dateStr] || '';
+          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반반차${ap ? '('+ap+')' : ''}">${cnt}+반반차${ap ? '<span class="ampm">'+ap+'</span>' : ''}</td>`;
         } else if (cnt > 0 && hasHalfLeave) {
           // 보고함 + 반차
-          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반차">${cnt}+반차</td>`;
+          const ap = ampmByKey[author + '|' + dateStr] || '';
+          html += `<td class="cell has-with-leave" title="보고 ${cnt}건 + 반차${ap ? '('+ap+')' : ''}">${cnt}+반차${ap ? '<span class="ampm">'+ap+'</span>' : ''}</td>`;
         } else if (cnt > 0) {
           html += `<td class="cell has">${cnt}</td>`;
         } else if (HOLIDAYS[dateStr]) {
@@ -2504,9 +2533,13 @@
         } else if (hasFullLeave) {
           html += `<td class="cell leave-full" title="종일연차">연차</td>`;
         } else if (hasHalfLeave) {
-          html += `<td class="cell leave-half" title="반차">반차</td>`;
+          const ap = ampmByKey[author + '|' + dateStr] || '';
+          const apShort = ap === '오전' ? '<span class="ampm">오전</span>' : ap === '오후' ? '<span class="ampm">오후</span>' : '';
+          html += `<td class="cell leave-half" title="반차${ap ? '('+ap+')' : ''}">반차${apShort}</td>`;
         } else if (hasQuarterLeave) {
-          html += `<td class="cell leave-quarter" title="반반차">반반차</td>`;
+          const ap = ampmByKey[author + '|' + dateStr] || '';
+          const apShort = ap === '오전' ? '<span class="ampm">오전</span>' : ap === '오후' ? '<span class="ampm">오후</span>' : '';
+          html += `<td class="cell leave-quarter" title="반반차${ap ? '('+ap+')' : ''}">반반차${apShort}</td>`;
         } else if (isPast) {
           html += `<td class="cell absent">✕</td>`;
         } else {
@@ -2781,12 +2814,19 @@
     return n.toFixed(2).replace(/\.?0+$/, '');
   }
 
-  function getTypeLabel(typeKey) {
-    if (typeKey === 'full') return '연차';
-    if (typeKey === 'half') return '반차';
-    if (typeKey === 'quarter') return '반반차';
-    if (typeKey === 'maternity') return '출산';
-    return '';
+  function getTypeLabel(typeKey, typeStr) {
+    let base = '';
+    if (typeKey === 'full') base = '연차';
+    else if (typeKey === 'half') base = '반차';
+    else if (typeKey === 'quarter') base = '반반차';
+    else if (typeKey === 'maternity') base = '출산';
+    else return '';
+    // 반차·반반차는 오전/오후 표기
+    if ((typeKey === 'half' || typeKey === 'quarter') && typeStr) {
+      const ap = getAmPm(typeStr);
+      if (ap) base += ' ' + ap;
+    }
+    return base;
   }
 
   function prevMonth() {
@@ -2944,7 +2984,7 @@
 
       const dayLeaves = leavesByDay[day] || [];
       const tagsHtml = dayLeaves.map(l => {
-        const lbl = getTypeLabel(l.typeKey);
+        const lbl = getTypeLabel(l.typeKey, l.type);
         const expandedMark = l._expanded ? '<span style="opacity:0.5; margin-left:2px;" title="비고에서 자동 확장">✱</span>' : '';
         const tooltipText = l.author + ' · ' + l.type + (l.note ? ' (' + l.note + ')' : '') + (l._expanded ? ' [비고 자동 확장]' : '');
         return `<div class="leave-tag ${l.typeKey}" title="${escapeHtml(tooltipText)}">${l.author}<span class="leave-tag-type"> ${lbl}</span>${expandedMark}</div>`;
@@ -3025,11 +3065,12 @@
         }
       }
       const granted = LEAVE_GRANTED[author];
-      const remain = (granted != null) ? Math.max(0, granted - total) : null;
+      const remain = (granted != null) ? (granted - total) : null;
       const lowRemain = remain != null && remain <= 3;
+      const overRemain = remain != null && remain < 0;
       html += `<td class="col-granted">${granted != null ? fmtDays(granted) : '·'}</td>`;
       html += `<td class="col-used">${fmtDays(total)}</td>`;
-      html += `<td class="col-remain${lowRemain ? ' low' : ''}">${remain != null ? fmtDays(remain) : '·'}</td></tr>`;
+      html += `<td class="col-remain${overRemain ? ' over' : (lowRemain ? ' low' : '')}">${remain != null ? fmtDays(remain) : '·'}</td></tr>`;
     });
 
     // 월별 합계 행
@@ -3046,7 +3087,7 @@
       const g = LEAVE_GRANTED[a];
       if (g != null) {
         grantedTotal += g;
-        remainTotal += Math.max(0, g - totals[a]);
+        remainTotal += (g - totals[a]);
       }
     });
     html += `<td class="col-granted">${fmtDays(grantedTotal)}</td>`;

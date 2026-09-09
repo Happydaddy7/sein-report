@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>슬랙 플러스(+)</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F2E4C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="슬랙 플러스+">
+<link rel="apple-touch-icon" href="icon-192.png">
 <!-- Open Graph (슬랙/카톡 공유 시 미리보기) -->
 <meta property="og:title" content="슬랙 플러스(+)">
 <meta property="og:description" content=" ">
@@ -1653,7 +1661,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v40
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v41
   </footer>
 </div>
 
@@ -3103,6 +3111,35 @@
     div.textContent = text;
     return div.innerHTML;
   }
+</script>
+
+<!-- PWA: 설치 버튼 + 서비스워커 -->
+<button id="pwa-install" style="display:none;position:fixed;right:16px;bottom:16px;z-index:9999;background:#0F2E4C;color:#F5EFE6;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;font-family:inherit;">📲 앱 설치</button>
+<script>
+  // 서비스워커 등록 (상대경로 → GitHub Pages 하위경로 대응)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+  // 설치 프롬프트 (안드로이드 크롬)
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('pwa-install');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'block';
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+  });
 </script>
 
 </body>

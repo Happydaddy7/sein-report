@@ -1,10 +1,10 @@
 // 슬랙 플러스(+) PWA 서비스워커
 // 버전 올릴 때 CACHE 이름을 변경하면 이전 캐시가 정리됨
-const CACHE = 'sein-report-v41';
+const CACHE = 'sein-report-v42';
 const ASSETS = [
   './',
   './index.html',
-  './manifest.webmanifest',
+  './app.webmanifest',
   './icon-192.png',
   './icon-512.png'
 ];

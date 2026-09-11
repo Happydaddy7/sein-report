@@ -800,6 +800,7 @@
 
     /* 캘린더 모바일 대응 */
     .calendar-wrap { padding: 8px; }
+    .calendar-weekdays { gap: 2px; margin-bottom: 2px; }
     .calendar-grid { gap: 2px; grid-auto-rows: minmax(54px, auto); }
     .calendar-weekday { padding: 6px 1px; font-size: 10px; }
     .calendar-day {
@@ -886,6 +887,12 @@
     border: 1px solid var(--line);
     padding: 16px;
     border-radius: 8px;
+  }
+  .calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
   }
   .calendar-grid {
     display: grid;
@@ -1552,7 +1559,6 @@
         <button class="quick-btn" onclick="goToWeek(-1)" data-offset="-1">지난주</button>
         <button class="quick-btn" onclick="goToWeek(-2)" data-offset="-2">2주전</button>
         <button class="refresh-btn" onclick="loadData()">🔄</button>
-        <button class="refresh-btn" onclick="openShare()" title="앱 공유">📤</button>
       </div>
       <button class="nav-arrow" onclick="changeWeek(1)">▶</button>
     </div>
@@ -1655,6 +1661,7 @@
 
       <!-- 달력 -->
       <div class="calendar-wrap">
+        <div class="calendar-weekdays" id="calendar-weekdays"></div>
         <div class="calendar-grid" id="calendar-grid"></div>
       </div>
 
@@ -1685,7 +1692,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v45
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v46
   </footer>
 </div>
 
@@ -3003,11 +3010,13 @@
 
     let html = '';
 
-    // 요일 헤더
+    // 요일 헤더 (별도 컨테이너)
+    let wkHtml = '';
     weekdays.forEach((wd, i) => {
       const cls = i === 0 ? 'sunday' : i === 6 ? 'saturday' : '';
-      html += `<div class="calendar-weekday ${cls}">${wd}</div>`;
+      wkHtml += `<div class="calendar-weekday ${cls}">${wd}</div>`;
     });
+    document.getElementById('calendar-weekdays').innerHTML = wkHtml;
 
     // 이전 달 빈 칸
     for (let i = 0; i < firstWeekday; i++) {
@@ -3171,7 +3180,10 @@
   </div>
 </div>
 
-<button id="pwa-install" style="display:none;position:fixed;right:16px;bottom:16px;z-index:9999;background:#0F2E4C;color:#F5EFE6;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;font-family:inherit;">📲 앱 설치</button>
+<!-- 우하단 고정 공유 버튼 -->
+<button onclick="openShare()" title="앱 공유" style="position:fixed;right:16px;bottom:16px;z-index:9998;background:#B87333;color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;">📤</button>
+
+<button id="pwa-install" style="display:none;position:fixed;right:16px;bottom:80px;z-index:9999;background:#0F2E4C;color:#F5EFE6;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;font-family:inherit;">📲 앱 설치</button>
 <script>
   // 서비스워커 등록 (상대경로 → GitHub Pages 하위경로 대응)
   if ('serviceWorker' in navigator) {

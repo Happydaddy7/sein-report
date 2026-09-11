@@ -797,6 +797,26 @@
     }
     .maternity-row-bar { grid-column: 1 / -1; }
     .maternity-row-dates { grid-column: 1 / -1; text-align: left; }
+
+    /* 캘린더 모바일 대응 */
+    .calendar-wrap { padding: 8px; }
+    .calendar-grid { gap: 2px; grid-auto-rows: minmax(54px, auto); }
+    .calendar-weekday { padding: 6px 1px; font-size: 10px; }
+    .calendar-day {
+      min-height: 54px;
+      padding: 3px 2px 4px;
+      gap: 1px;
+      border-radius: 3px;
+    }
+    .calendar-day-num { font-size: 10px; margin-bottom: 1px; }
+    .calendar-day.today .calendar-day-num { font-size: 11px; }
+    .calendar-day-holiday { font-size: 7px; padding: 0 2px; }
+    .leave-tag {
+      padding: 1px 2px;
+      font-size: 8px;
+      line-height: 1.15;
+      border-left-width: 2px;
+    }
   }
   .matrix td.cell.has-with-leave {
     background: linear-gradient(135deg, var(--ivory) 50%, #FFE4C7 50%);
@@ -870,7 +890,9 @@
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(95px, auto);
     gap: 4px;
+    align-items: stretch;
   }
   .calendar-weekday {
     text-align: center;
@@ -881,6 +903,7 @@
     font-size: 12px;
     font-family: 'JetBrains Mono', monospace;
     border-radius: 4px;
+    align-self: start;
   }
   .calendar-weekday.sunday { color: #B85556; }
   .calendar-weekday.saturday { color: #4A6FA5; }
@@ -1529,6 +1552,7 @@
         <button class="quick-btn" onclick="goToWeek(-1)" data-offset="-1">지난주</button>
         <button class="quick-btn" onclick="goToWeek(-2)" data-offset="-2">2주전</button>
         <button class="refresh-btn" onclick="loadData()">🔄</button>
+        <button class="refresh-btn" onclick="openShare()" title="앱 공유">📤</button>
       </div>
       <button class="nav-arrow" onclick="changeWeek(1)">▶</button>
     </div>
@@ -1661,7 +1685,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v43
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v45
   </footer>
 </div>
 
@@ -1743,6 +1767,8 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     loadData();
+    // 초기 탭을 히스토리 베이스로 등록 (뒤로가기 대응)
+    try { history.replaceState({ tab: 'share' }, '', '#share'); } catch (e) {}
     const input = document.getElementById('search-input');
     input.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim();
@@ -2269,7 +2295,7 @@
     render();
   }
 
-  function switchTab(name) {
+  function applyTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === name);
     });
@@ -2277,6 +2303,22 @@
       c.classList.toggle('active', c.id === 'tab-' + name);
     });
   }
+
+  function switchTab(name, fromHistory) {
+    applyTab(name);
+    if (!fromHistory) {
+      // 탭 전환을 히스토리에 기록 → 기기 뒤로가기로 이전 탭 복귀
+      try { history.pushState({ tab: name }, '', '#' + name); } catch (e) {}
+    }
+  }
+
+  // 기기/브라우저 뒤로가기 처리
+  window.addEventListener('popstate', (e) => {
+    const name = (e.state && e.state.tab) ? e.state.tab
+      : (location.hash ? location.hash.slice(1) : 'share');
+    const valid = ['share', 'all', 'matrix', 'leave'];
+    applyTab(valid.includes(name) ? name : 'share');
+  });
 
   function clearSearch() {
     document.getElementById('search-input').value = '';
@@ -3114,6 +3156,21 @@
 </script>
 
 <!-- PWA: 설치 버튼 + 서비스워커 -->
+<!-- 공유 모달 -->
+<div id="share-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,46,76,.55);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeShare()">
+  <div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:24px 22px;box-shadow:0 12px 40px rgba(0,0,0,.3);text-align:center;font-family:inherit;">
+    <div style="font-size:17px;font-weight:800;color:#0F2E4C;margin-bottom:4px;">📲 앱 공유하기</div>
+    <div style="font-size:12.5px;color:#8A7E6C;margin-bottom:16px;line-height:1.5;">아래 QR을 찍거나 링크를 보내면<br>홈 화면에 앱으로 설치할 수 있습니다</div>
+    <img src="앱_설치_QR.png" alt="설치 QR코드" style="width:200px;height:auto;border:1px solid #E5DFD4;border-radius:10px;margin-bottom:16px;" onerror="this.style.display='none'">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button onclick="nativeShare()" style="background:#0F2E4C;color:#F5EFE6;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">📤 공유하기 (카톡·문자 등)</button>
+      <button onclick="copyLink()" style="background:#F0EFEC;color:#0F2E4C;border:1px solid #E5DFD4;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">🔗 링크 복사</button>
+    </div>
+    <div id="share-toast" style="font-size:12px;color:#2E7D6B;font-weight:700;margin-top:10px;height:16px;"></div>
+    <button onclick="closeShare()" style="background:none;border:none;color:#B0A492;font-size:13px;margin-top:8px;cursor:pointer;font-family:inherit;">닫기</button>
+  </div>
+</div>
+
 <button id="pwa-install" style="display:none;position:fixed;right:16px;bottom:16px;z-index:9999;background:#0F2E4C;color:#F5EFE6;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;font-family:inherit;">📲 앱 설치</button>
 <script>
   // 서비스워커 등록 (상대경로 → GitHub Pages 하위경로 대응)
@@ -3140,6 +3197,34 @@
   window.addEventListener('appinstalled', () => {
     installBtn.style.display = 'none';
   });
+
+  // 공유 기능
+  const SHARE_URL = 'https://happydaddy7.github.io/sein-report/';
+  function openShare() { document.getElementById('share-modal').style.display = 'flex'; }
+  function closeShare() { document.getElementById('share-modal').style.display = 'none'; document.getElementById('share-toast').textContent = ''; }
+  function shareToast(msg) { document.getElementById('share-toast').textContent = msg; setTimeout(() => { const t = document.getElementById('share-toast'); if (t) t.textContent = ''; }, 2500); }
+  async function nativeShare() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: '슬랙 플러스+ 업무보고 대시보드', text: '업무보고·연월차 대시보드 앱입니다. 링크 열고 홈 화면에 추가하세요.', url: SHARE_URL });
+      } catch (e) {}
+    } else {
+      copyLink();
+      shareToast('공유 미지원 기기 — 링크를 복사했어요');
+    }
+  }
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(SHARE_URL);
+      shareToast('✓ 링크를 복사했어요');
+    } catch (e) {
+      // 폴백: 임시 입력창
+      const ta = document.createElement('textarea');
+      ta.value = SHARE_URL; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); shareToast('✓ 링크를 복사했어요'); } catch (e2) { shareToast('복사 실패 — 주소창에서 복사해 주세요'); }
+      document.body.removeChild(ta);
+    }
+  }
 </script>
 
 </body>

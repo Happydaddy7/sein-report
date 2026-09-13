@@ -804,7 +804,8 @@
     .calendar-grid { gap: 2px; grid-auto-rows: minmax(54px, auto); }
     .calendar-weekday { padding: 6px 1px; font-size: 10px; }
     .calendar-day {
-      min-height: 54px;
+      min-height: 62px;
+      height: 100%;
       padding: 3px 2px 4px;
       gap: 1px;
       border-radius: 3px;
@@ -920,6 +921,8 @@
     border-radius: 4px;
     padding: 6px 6px 8px;
     min-height: 95px;
+    height: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -1692,7 +1695,7 @@
   </div>
 
   <footer class="footer">
-    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v46
+    SAEIN BIO · 업무보고 + 연월차 통합 · 작성 이병준 팀장 · v47
   </footer>
 </div>
 
